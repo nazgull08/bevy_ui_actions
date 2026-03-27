@@ -1,0 +1,61 @@
+[package]
+name = "bevy_ui_actions"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Lightweight action-driven UI toolkit for Bevy — clicks, drag-and-drop, tooltips, tabs, progress bars"
+repository = "https://github.com/nazgull08/bevy_ui_actions"
+homepage = "https://github.com/nazgull08/bevy_ui_actions"
+keywords = ["bevy", "ui", "gamedev", "drag-drop", "tooltip"]
+categories = ["game-development", "gui"]
+readme = "README.md"
+rust-version = "1.85"
+
+[dependencies]
+bevy = { version = "0.16.1", default-features = false, features = [
+    "bevy_ui",
+    "bevy_render",
+    "bevy_sprite",
+    "bevy_text",
+    "bevy_picking",
+    "bevy_window",
+] }
+
+[dev-dependencies]
+bevy = { version = "0.16.1", features = ["default"] }
+
+[[example]]
+name = "counter"
+path = "examples/counter.rs"
+
+[[example]]
+name = "menu"
+path = "examples/menu.rs"
+
+[[example]]
+name = "drag_drop"
+path = "examples/drag_drop.rs"
+
+[[example]]
+name = "inventory_demo"
+path = "examples/inventory_demo.rs"
+
+[[example]]
+name = "progress_bar"
+path = "examples/progress_bar.rs"
+
+[[example]]
+name = "rich_tooltip"
+path = "examples/rich_tooltip.rs"
+
+[[example]]
+name = "right_click"
+path = "examples/right_click.rs"
+
+[[example]]
+name = "selection"
+path = "examples/selection.rs"
+
+[[example]]
+name = "tabs"
+path = "examples/tabs.rs"
