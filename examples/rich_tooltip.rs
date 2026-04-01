@@ -105,15 +105,7 @@ fn setup(mut commands: Commands, equipped: Res<EquippedItem>) {
     commands.spawn(Camera2d);
 
     commands
-        .spawn(Node {
-            width: Val::Percent(100.0),
-            height: Val::Percent(100.0),
-            flex_direction: FlexDirection::Column,
-            align_items: AlignItems::Center,
-            justify_content: JustifyContent::Center,
-            row_gap: Val::Px(30.0),
-            ..default()
-        })
+        .spawn(Node::centered(30.0))
         .with_children(|parent| {
             parent.ui_text(TextRole::Heading, "Rich Tooltip Example");
             parent.ui_text(TextRole::Label, "Hover over items to see tooltips");
@@ -129,11 +121,7 @@ fn setup(mut commands: Commands, equipped: Res<EquippedItem>) {
                 .with_children(|col| {
                     col.ui_text(TextRole::Button, "Simple Tooltips");
 
-                    col.spawn(Node {
-                        flex_direction: FlexDirection::Row,
-                        column_gap: Val::Px(15.0),
-                        ..default()
-                    })
+                    col.spawn(Node::row(15.0))
                     .with_children(|row| {
                         spawn_simple_button(row, "Button A", "Simple text tooltip");
                         spawn_simple_button(row, "Button B", "Another tooltip");
@@ -152,11 +140,7 @@ fn setup(mut commands: Commands, equipped: Res<EquippedItem>) {
                 .with_children(|col| {
                     col.ui_text(TextRole::Button, "Rich Tooltips (Items)");
 
-                    col.spawn(Node {
-                        flex_direction: FlexDirection::Row,
-                        column_gap: Val::Px(15.0),
-                        ..default()
-                    })
+                    col.spawn(Node::row(15.0))
                     .with_children(|row| {
                         for item in ITEMS {
                             spawn_item_slot(row, item, &equipped);

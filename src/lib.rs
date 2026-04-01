@@ -10,8 +10,8 @@ pub use plugin::UiActionsPlugin;
 
 // Re-export core
 pub use core::{
-    ButtonConfig, ButtonStyle, SpawnActionButton, SpawnUiExt, TextRole, UiAction, UiTextExt,
-    UiTheme,
+    ButtonConfig, ButtonStyle, NodeExt, SpawnActionButton, SpawnUiExt, TextRole, UiAction,
+    UiTextExt, UiTheme,
 };
 
 // Re-export interactions

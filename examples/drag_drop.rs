@@ -63,25 +63,13 @@ fn setup(mut commands: Commands) {
     commands.spawn(Camera2d);
 
     commands
-        .spawn(Node {
-            width: Val::Percent(100.0),
-            height: Val::Percent(100.0),
-            flex_direction: FlexDirection::Column,
-            align_items: AlignItems::Center,
-            justify_content: JustifyContent::Center,
-            row_gap: Val::Px(40.0),
-            ..default()
-        })
+        .spawn(Node::centered(40.0))
         .with_children(|parent| {
             parent.ui_text(TextRole::Heading, "Drag & Drop Example");
 
             // Draggable items row
             parent
-                .spawn(Node {
-                    flex_direction: FlexDirection::Row,
-                    column_gap: Val::Px(20.0),
-                    ..default()
-                })
+                .spawn(Node::row(20.0))
                 .with_children(|row| {
                     spawn_draggable_item(row, "Item A", Color::srgb(0.8, 0.3, 0.3));
                     spawn_draggable_item(row, "Item B", Color::srgb(0.3, 0.8, 0.3));
@@ -90,11 +78,7 @@ fn setup(mut commands: Commands) {
 
             // Drop targets row
             parent
-                .spawn(Node {
-                    flex_direction: FlexDirection::Row,
-                    column_gap: Val::Px(20.0),
-                    ..default()
-                })
+                .spawn(Node::row(20.0))
                 .with_children(|row| {
                     for i in 0..4 {
                         spawn_drop_slot(row, i);

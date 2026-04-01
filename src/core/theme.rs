@@ -12,22 +12,13 @@ use bevy::prelude::*;
 ///     theme.font = asset_server.load("fonts/my_font.ttf");
 /// }
 /// ```
-#[derive(Resource, Clone)]
+#[derive(Resource, Clone, Default)]
 pub struct UiTheme {
     /// Primary font for all UI text.
     pub font: Handle<Font>,
 
     /// Secondary font (monospace, pixel, etc). Optional.
     pub font_alt: Option<Handle<Font>>,
-}
-
-impl Default for UiTheme {
-    fn default() -> Self {
-        Self {
-            font: Handle::default(),
-            font_alt: None,
-        }
-    }
 }
 
 /// Semantic text role with default size and color.

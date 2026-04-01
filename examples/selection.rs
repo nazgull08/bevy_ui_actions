@@ -97,15 +97,7 @@ fn setup(mut commands: Commands) {
     commands.spawn(Camera2d);
 
     commands
-        .spawn(Node {
-            width: Val::Percent(100.0),
-            height: Val::Percent(100.0),
-            flex_direction: FlexDirection::Column,
-            align_items: AlignItems::Center,
-            justify_content: JustifyContent::Center,
-            row_gap: Val::Px(30.0),
-            ..default()
-        })
+        .spawn(Node::centered(30.0))
         .with_children(|root| {
             root.ui_text(TextRole::Heading, "Selection + BorderStyle Example");
             root.ui_text(TextRole::Label, "Click slots to select. Click again to deselect.");

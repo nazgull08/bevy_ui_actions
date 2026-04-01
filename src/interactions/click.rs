@@ -25,6 +25,7 @@ impl OnClick {
 }
 
 /// System: fires [`OnClick`] action when `Interaction::Pressed`.
+#[allow(clippy::type_complexity)]
 pub(crate) fn handle_clicks(
     query: Query<(&Interaction, &OnClick), (Changed<Interaction>, Without<Disabled>)>,
     mut commands: Commands,

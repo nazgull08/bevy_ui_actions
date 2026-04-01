@@ -73,6 +73,7 @@ pub struct PreviousInteraction(pub Interaction);
 // ============ Systems ============
 
 /// System: fires [`OnHover`] when entering `Interaction::Hovered`.
+#[allow(clippy::type_complexity)]
 pub(crate) fn handle_hover_actions(
     query: Query<(&Interaction, &OnHover), (Changed<Interaction>, Without<Disabled>)>,
     mut commands: Commands,
@@ -98,6 +99,7 @@ pub(crate) fn handle_hover_exit_actions(
 }
 
 /// System: fires [`OnPress`] when entering `Interaction::Pressed`.
+#[allow(clippy::type_complexity)]
 pub(crate) fn handle_press_actions(
     query: Query<(&Interaction, &OnPress), (Changed<Interaction>, Without<Disabled>)>,
     mut commands: Commands,

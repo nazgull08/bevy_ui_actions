@@ -122,6 +122,7 @@ enum GhostVisual {
 
 // ============ State Machine System ============
 
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub(crate) fn drag_system(
     mut drag_state: ResMut<DragState>,
     ghost_style: Res<DragGhostStyle>,
@@ -280,6 +281,7 @@ pub(crate) fn drag_system(
 }
 
 /// Find a visual for the ghost (image or color).
+#[allow(clippy::type_complexity)]
 fn find_ghost_visual(
     entity: Entity,
     draggables: &Query<

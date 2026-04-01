@@ -73,15 +73,7 @@ fn setup(mut commands: Commands) {
     commands.spawn(Camera2d);
 
     commands
-        .spawn(Node {
-            width: Val::Percent(100.0),
-            height: Val::Percent(100.0),
-            flex_direction: FlexDirection::Column,
-            align_items: AlignItems::Center,
-            justify_content: JustifyContent::Center,
-            row_gap: Val::Px(20.0),
-            ..default()
-        })
+        .spawn(Node::centered(20.0))
         .with_children(|parent| {
             // Counter text
             parent
@@ -90,11 +82,7 @@ fn setup(mut commands: Commands) {
 
             // Buttons row
             parent
-                .spawn(Node {
-                    flex_direction: FlexDirection::Row,
-                    column_gap: Val::Px(20.0),
-                    ..default()
-                })
+                .spawn(Node::row(20.0))
                 .with_children(|row| {
                     // Decrement button with hover/press logging
                     row.spawn((

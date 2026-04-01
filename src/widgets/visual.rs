@@ -324,6 +324,7 @@ impl BorderStyle {
 /// System: update BackgroundColor based on interaction state.
 ///
 /// Only processes entities with `InteractiveVisual` marker.
+#[allow(clippy::type_complexity)]
 pub(crate) fn update_interactive_visuals(
     global_style: Res<ButtonStyle>,
     mut query: Query<
@@ -419,6 +420,7 @@ fn compute_bg_color(
 /// System: update BorderColor based on interaction state.
 ///
 /// Only processes entities with `BorderStyle` component.
+#[allow(clippy::type_complexity)]
 pub(crate) fn update_border_visuals(
     mut query: Query<(
         Entity,
