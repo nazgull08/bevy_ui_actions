@@ -4,10 +4,12 @@ use crate::interactions::{
     handle_press_actions, handle_right_clicks, has_draggables, DragGhostStyle, DragState,
 };
 use crate::widgets::{
-    handle_tab_clicks, hide_tooltip, should_hide_tooltip, should_show_tooltip, show_tooltip,
+    clamp_scroll_bounds, handle_scroll_input, handle_scrollbar_drag, handle_tab_clicks,
+    handle_track_click, has_scroll_views, hide_tooltip, should_hide_tooltip, should_show_tooltip,
+    show_tooltip,
     sync_active_tab_marker, sync_tab_content_visibility, update_border_visuals,
-    update_interactive_visuals, update_progress_bars, update_tooltip_hover, TooltipSet,
-    TooltipState, TooltipStyle,
+    update_interactive_visuals, update_progress_bars, update_scrollbar_thumb,
+    update_tooltip_hover, ScrollbarDragState, TooltipSet, TooltipState, TooltipStyle,
 };
 use bevy::prelude::*;
 
@@ -21,6 +23,7 @@ impl Plugin for UiActionsPlugin {
             .init_resource::<DragGhostStyle>()
             .init_resource::<TooltipState>()
             .init_resource::<TooltipStyle>()
+            .init_resource::<ScrollbarDragState>()
             // Configure tooltip system ordering
             .configure_sets(
                 Update,
@@ -58,6 +61,16 @@ impl Plugin for UiActionsPlugin {
                     update_border_visuals,
                     // Progress bars
                     update_progress_bars,
+                    // Scroll
+                    (
+                        handle_scroll_input,
+                        handle_scrollbar_drag,
+                        handle_track_click,
+                        clamp_scroll_bounds,
+                        update_scrollbar_thumb,
+                    )
+                        .chain()
+                        .run_if(has_scroll_views),
                     // Tabs
                     handle_tab_clicks,
                     sync_tab_content_visibility,

@@ -1,5 +1,6 @@
 mod panel;
 mod progress_bar;
+mod scroll_view;
 mod tabs;
 mod tooltip;
 mod visual;
@@ -11,6 +12,10 @@ pub use tooltip::{
     TooltipStyle, TooltipUI,
 };
 pub use panel::{PanelConfig, SpawnPanelExt};
+pub use scroll_view::{
+    ScrollDirection, ScrollView, ScrollViewConfig, ScrollbarDragState, ScrollbarThumb,
+    ScrollbarTrack, SpawnScrollViewExt,
+};
 pub use visual::{Active, BorderStyle, Disabled, InteractiveVisual, Selected, VisualStyle};
 
 // Re-export systems for plugin
@@ -18,5 +23,9 @@ pub(crate) use progress_bar::update_progress_bars;
 pub(crate) use tabs::{handle_tab_clicks, sync_active_tab_marker, sync_tab_content_visibility};
 pub(crate) use tooltip::{
     hide_tooltip, should_hide_tooltip, should_show_tooltip, show_tooltip, update_tooltip_hover,
+};
+pub(crate) use scroll_view::{
+    clamp_scroll_bounds, handle_scroll_input, handle_scrollbar_drag, handle_track_click,
+    has_scroll_views, update_scrollbar_thumb,
 };
 pub(crate) use visual::{update_border_visuals, update_interactive_visuals};

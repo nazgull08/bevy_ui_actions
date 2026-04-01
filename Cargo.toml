@@ -53,6 +53,10 @@ name = "right_click"
 path = "examples/right_click.rs"
 
 [[example]]
+name = "scroll_view"
+path = "examples/scroll_view.rs"
+
+[[example]]
 name = "selection"
 path = "examples/selection.rs"
 

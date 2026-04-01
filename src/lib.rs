@@ -23,7 +23,8 @@ pub use interactions::{
 // Re-export widgets
 pub use widgets::{
     Active, BorderStyle, Disabled, InteractiveVisual, PanelConfig, ProgressBar, ProgressBarConfig,
-    ProgressBarFill, Selected, SpawnPanelExt, SpawnProgressBarExt, StatDiff, Tab, TabContent,
-    TabGroup, Tooltip, TooltipBuilder, TooltipContent, TooltipSection, TooltipSet, TooltipState,
-    TooltipStyle, TooltipUI, VisualStyle,
+    ProgressBarFill, ScrollDirection, ScrollView, ScrollViewConfig, Selected, SpawnPanelExt,
+    SpawnProgressBarExt, SpawnScrollViewExt, StatDiff, Tab, TabContent, TabGroup, Tooltip,
+    TooltipBuilder, TooltipContent, TooltipSection, TooltipSet, TooltipState, TooltipStyle,
+    TooltipUI, VisualStyle,
 };
