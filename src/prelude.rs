@@ -9,10 +9,10 @@ pub use crate::interactions::{
 };
 
 pub use crate::widgets::{
-    Active, BorderStyle, Disabled, InteractiveVisual, ProgressBar, ProgressBarConfig,
-    ProgressBarFill, Selected, SpawnProgressBarExt, StatDiff, Tab, TabContent, TabGroup, Tooltip,
-    TooltipBuilder, TooltipContent, TooltipSection, TooltipSet, TooltipState, TooltipStyle,
-    VisualStyle,
+    Active, BorderStyle, Disabled, InteractiveVisual, PanelConfig, ProgressBar, ProgressBarConfig,
+    ProgressBarFill, Selected, SpawnPanelExt, SpawnProgressBarExt, StatDiff, Tab, TabContent,
+    TabGroup, Tooltip, TooltipBuilder, TooltipContent, TooltipSection, TooltipSet, TooltipState,
+    TooltipStyle, VisualStyle,
 };
 
 pub use crate::UiActionsPlugin;

@@ -1,3 +1,4 @@
+mod panel;
 mod progress_bar;
 mod tabs;
 mod tooltip;
@@ -9,6 +10,7 @@ pub use tooltip::{
     StatDiff, Tooltip, TooltipBuilder, TooltipContent, TooltipSection, TooltipSet, TooltipState,
     TooltipStyle, TooltipUI,
 };
+pub use panel::{PanelConfig, SpawnPanelExt};
 pub use visual::{Active, BorderStyle, Disabled, InteractiveVisual, Selected, VisualStyle};
 
 // Re-export systems for plugin

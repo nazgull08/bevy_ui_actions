@@ -119,17 +119,11 @@ fn setup(mut commands: Commands) {
             });
 
             // Selection info panel
-            root.spawn((
-                Node {
-                    padding: UiRect::all(Val::Px(15.0)),
-                    border: UiRect::all(Val::Px(1.0)),
-                    min_width: Val::Px(300.0),
-                    min_height: Val::Px(80.0),
-                    ..default()
-                },
-                BackgroundColor(Color::srgb(0.12, 0.12, 0.15)),
-                BorderColor(Color::srgb(0.3, 0.3, 0.35)),
-            ))
+            root.spawn_panel(PanelConfig {
+                min_width: Val::Px(300.0),
+                min_height: Val::Px(80.0),
+                ..PanelConfig::dark()
+            })
             .with_children(|panel| {
                 panel
                     .ui_text(TextRole::Body, "No slot selected")
