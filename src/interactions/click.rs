@@ -1,4 +1,4 @@
-use crate::core::UiAction;
+use crate::core::{is_in_scope, UiAction, UiInputScope};
 use crate::widgets::Disabled;
 use bevy::prelude::*;
 use std::sync::Arc;
@@ -27,11 +27,18 @@ impl OnClick {
 /// System: fires [`OnClick`] action when `Interaction::Pressed`.
 #[allow(clippy::type_complexity)]
 pub(crate) fn handle_clicks(
-    query: Query<(&Interaction, &OnClick), (Changed<Interaction>, Without<Disabled>)>,
+    query: Query<(Entity, &Interaction, &OnClick), (Changed<Interaction>, Without<Disabled>)>,
+    scope: Option<Res<UiInputScope>>,
+    parents: Query<&ChildOf>,
     mut commands: Commands,
 ) {
-    for (interaction, on_click) in &query {
+    for (entity, interaction, on_click) in &query {
         if *interaction == Interaction::Pressed {
+            if let Some(ref scope) = scope {
+                if !is_in_scope(entity, scope, &parents) {
+                    continue;
+                }
+            }
             on_click.execute(&mut commands);
         }
     }

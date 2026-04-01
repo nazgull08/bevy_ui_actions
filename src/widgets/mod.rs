@@ -1,4 +1,5 @@
 mod list_view;
+mod modal;
 mod panel;
 mod progress_bar;
 mod scroll_view;
@@ -15,6 +16,10 @@ pub use tooltip::{
 pub use list_view::{
     ListItem, ListItemSelected, ListView, ListViewConfig, ListViewItems, SelectionMode,
     SpawnListViewExt,
+};
+pub use modal::{
+    DismissModal, DismissModalEvent, Modal, ModalBackdrop, ModalPanel, ModalQueue, ModalRequest,
+    ModalStyle, spawn_modal_button,
 };
 pub use panel::{PanelConfig, SpawnPanelExt};
 pub use scroll_view::{
@@ -33,4 +38,5 @@ pub(crate) use scroll_view::{
     clamp_scroll_bounds, handle_scroll_input, handle_scrollbar_drag, handle_track_click,
     has_scroll_views, update_scrollbar_thumb,
 };
+pub(crate) use modal::{handle_dismiss_event, handle_modal_dismiss, process_modal_queue};
 pub(crate) use visual::{update_border_visuals, update_interactive_visuals};

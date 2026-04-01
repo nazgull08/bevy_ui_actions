@@ -61,5 +61,9 @@ name = "selection"
 path = "examples/selection.rs"
 
 [[example]]
+name = "modal"
+path = "examples/modal.rs"
+
+[[example]]
 name = "tabs"
 path = "examples/tabs.rs"

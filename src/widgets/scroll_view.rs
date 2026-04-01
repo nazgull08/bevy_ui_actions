@@ -1,3 +1,4 @@
+use crate::core::{is_in_scope, UiInputScope};
 use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
 use bevy::prelude::*;
 
@@ -399,11 +400,14 @@ pub(crate) fn handle_scroll_input(
     mut wheel_events: EventReader<MouseWheel>,
     windows: Query<&Window>,
     mut query: Query<(
+        Entity,
         &ScrollView,
         &mut ScrollPosition,
         &GlobalTransform,
         &ComputedNode,
     )>,
+    scope: Option<Res<UiInputScope>>,
+    parents: Query<&ChildOf>,
 ) {
     let mut total_x: f32 = 0.0;
     let mut total_y: f32 = 0.0;
@@ -425,9 +429,15 @@ pub(crate) fn handle_scroll_input(
         return;
     };
 
-    for (scroll_view, mut scroll_pos, transform, computed) in &mut query {
+    for (entity, scroll_view, mut scroll_pos, transform, computed) in &mut query {
         if !cursor_in_node(cursor, transform, computed) {
             continue;
+        }
+
+        if let Some(ref scope) = scope {
+            if !is_in_scope(entity, scope, &parents) {
+                continue;
+            }
         }
 
         let speed = scroll_view.scroll_speed;
@@ -564,6 +574,7 @@ pub(crate) fn update_scrollbar_thumb(
 }
 
 /// Handles scrollbar thumb dragging.
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn handle_scrollbar_drag(
     mouse: Res<ButtonInput<MouseButton>>,
     windows: Query<&Window>,
@@ -572,6 +583,8 @@ pub(crate) fn handle_scrollbar_drag(
     track_query: Query<&ComputedNode, With<ScrollbarTrack>>,
     mut scroll_query: Query<(&mut ScrollPosition, &ComputedNode, &Children), With<ScrollView>>,
     child_nodes: Query<&ComputedNode, (Without<ScrollView>, Without<ScrollbarTrack>)>,
+    scope: Option<Res<UiInputScope>>,
+    parents: Query<&ChildOf>,
 ) {
     let cursor_y = windows
         .single()
@@ -585,6 +598,12 @@ pub(crate) fn handle_scrollbar_drag(
         for (interaction, thumb, child_of) in &thumb_query {
             if *interaction == Interaction::Pressed || *interaction == Interaction::Hovered {
                 let scroll_entity = thumb.scroll_view;
+
+                if let Some(ref scope) = scope {
+                    if !is_in_scope(scroll_entity, scope, &parents) {
+                        continue;
+                    }
+                }
 
                 let Ok((scroll_pos, viewport_node, children)) = scroll_query.get(scroll_entity)
                 else {
@@ -643,17 +662,19 @@ pub(crate) fn handle_scrollbar_drag(
 
 /// Handles clicking on the scrollbar track (page up/down).
 /// Clicking above the thumb scrolls up by one viewport, below scrolls down.
-#[allow(clippy::type_complexity)]
+#[allow(clippy::type_complexity, clippy::too_many_arguments)]
 pub(crate) fn handle_track_click(
     mouse: Res<ButtonInput<MouseButton>>,
     windows: Query<&Window>,
     drag_state: Res<ScrollbarDragState>,
     track_query: Query<
-        (&Interaction, &ScrollbarTrack, &GlobalTransform, &ComputedNode),
+        (Entity, &Interaction, &ScrollbarTrack, &GlobalTransform, &ComputedNode),
         Without<ScrollView>,
     >,
     mut scroll_query: Query<(&mut ScrollPosition, &ComputedNode, &Children), With<ScrollView>>,
     child_nodes: Query<&ComputedNode, (Without<ScrollView>, Without<ScrollbarTrack>)>,
+    scope: Option<Res<UiInputScope>>,
+    scope_parents: Query<&ChildOf>,
 ) {
     // Don't handle track clicks while thumb is being dragged
     if drag_state.dragging.is_some() {
@@ -673,9 +694,15 @@ pub(crate) fn handle_track_click(
         return;
     };
 
-    for (interaction, track, track_transform, track_node) in &track_query {
+    for (entity, interaction, track, track_transform, track_node) in &track_query {
         if *interaction != Interaction::Pressed && *interaction != Interaction::Hovered {
             continue;
+        }
+
+        if let Some(ref scope) = scope {
+            if !is_in_scope(entity, scope, &scope_parents) {
+                continue;
+            }
         }
 
         let Ok((mut scroll_pos, viewport_node, children)) =

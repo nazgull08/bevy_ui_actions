@@ -1,4 +1,4 @@
-use crate::core::UiAction;
+use crate::core::{is_in_scope, UiAction, UiInputScope};
 use crate::widgets::Disabled;
 use bevy::prelude::*;
 use std::sync::Arc;
@@ -26,13 +26,20 @@ impl OnRightClick {
 
 /// System: fires [`OnRightClick`] action when right-clicking a hovered element.
 pub(crate) fn handle_right_clicks(
-    query: Query<(&Interaction, &OnRightClick), Without<Disabled>>,
+    query: Query<(Entity, &Interaction, &OnRightClick), Without<Disabled>>,
+    scope: Option<Res<UiInputScope>>,
+    parents: Query<&ChildOf>,
     mouse: Res<ButtonInput<MouseButton>>,
     mut commands: Commands,
 ) {
     if mouse.just_pressed(MouseButton::Right) {
-        for (interaction, on_right_click) in &query {
+        for (entity, interaction, on_right_click) in &query {
             if *interaction == Interaction::Hovered || *interaction == Interaction::Pressed {
+                if let Some(ref scope) = scope {
+                    if !is_in_scope(entity, scope, &parents) {
+                        continue;
+                    }
+                }
                 on_right_click.execute(&mut commands);
             }
         }

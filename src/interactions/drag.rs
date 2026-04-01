@@ -1,4 +1,4 @@
-use crate::core::UiAction;
+use crate::core::{is_in_scope, UiAction, UiInputScope};
 use crate::widgets::Disabled;
 use bevy::prelude::*;
 use bevy::ui::FocusPolicy;
@@ -142,6 +142,8 @@ pub(crate) fn drag_system(
     image_query: Query<&ImageNode>,
     drop_targets: Query<(Entity, &Interaction, Option<&OnDrop>), With<DropTarget>>,
     mut ghost_query: Query<&mut Node, With<DragGhost>>,
+    scope: Option<Res<UiInputScope>>,
+    scope_parents: Query<&ChildOf>,
     mut commands: Commands,
 ) {
     let cursor_pos = windows.single().ok().and_then(|w| w.cursor_position());
@@ -157,6 +159,11 @@ pub(crate) fn drag_system(
 
             for (entity, interaction, _, _, _, _) in &draggables {
                 if *interaction == Interaction::Hovered || *interaction == Interaction::Pressed {
+                    if let Some(ref scope) = scope {
+                        if !is_in_scope(entity, scope, &scope_parents) {
+                            continue;
+                        }
+                    }
                     drag_state.phase = DragPhase::Pending;
                     drag_state.dragging = Some(entity);
                     drag_state.start_pos = cursor;
@@ -237,6 +244,11 @@ pub(crate) fn drag_system(
                 }
 
                 if *interaction == Interaction::Hovered || *interaction == Interaction::Pressed {
+                    if let Some(ref scope) = scope {
+                        if !is_in_scope(target_entity, scope, &scope_parents) {
+                            continue;
+                        }
+                    }
                     found_target = Some((target_entity, on_drop.map(|d| d.action.clone())));
                     break;
                 }

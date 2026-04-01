@@ -28,7 +28,7 @@
 //! commands.entity(slot).insert(Selected);
 //! ```
 
-use crate::core::ButtonStyle;
+use crate::core::{is_in_scope, ButtonStyle, UiInputScope};
 use bevy::prelude::*;
 
 // ============================================================
@@ -324,7 +324,7 @@ impl BorderStyle {
 /// System: update BackgroundColor based on interaction state.
 ///
 /// Only processes entities with `InteractiveVisual` marker.
-#[allow(clippy::type_complexity)]
+#[allow(clippy::type_complexity, clippy::too_many_arguments)]
 pub(crate) fn update_interactive_visuals(
     global_style: Res<ButtonStyle>,
     mut query: Query<
@@ -344,6 +344,8 @@ pub(crate) fn update_interactive_visuals(
     selected_added: Query<Entity, (Added<Selected>, With<InteractiveVisual>)>,
     mut removed_active: RemovedComponents<Active>,
     mut removed_selected: RemovedComponents<Selected>,
+    scope: Option<Res<UiInputScope>>,
+    parents: Query<&ChildOf>,
 ) {
     // Collect all entities that need update
     let mut to_update: Vec<Entity> = Vec::new();
@@ -381,10 +383,21 @@ pub(crate) fn update_interactive_visuals(
         if let Ok((_, interaction, mut bg, is_disabled, is_active, is_selected, local_style)) =
             query.get_mut(entity)
         {
+            // When scope is active, treat out-of-scope entities as Interaction::None
+            let effective_interaction = if let Some(ref scope) = scope {
+                if !is_in_scope(entity, scope, &parents) {
+                    Interaction::None
+                } else {
+                    *interaction
+                }
+            } else {
+                *interaction
+            };
+
             *bg = BackgroundColor(compute_bg_color(
                 &global_style,
                 local_style,
-                *interaction,
+                effective_interaction,
                 is_active,
                 is_selected,
                 is_disabled,
@@ -420,7 +433,7 @@ fn compute_bg_color(
 /// System: update BorderColor based on interaction state.
 ///
 /// Only processes entities with `BorderStyle` component.
-#[allow(clippy::type_complexity)]
+#[allow(clippy::type_complexity, clippy::too_many_arguments)]
 pub(crate) fn update_border_visuals(
     mut query: Query<(
         Entity,
@@ -436,6 +449,8 @@ pub(crate) fn update_border_visuals(
     selected_added: Query<Entity, (Added<Selected>, With<BorderStyle>)>,
     mut removed_active: RemovedComponents<Active>,
     mut removed_selected: RemovedComponents<Selected>,
+    scope: Option<Res<UiInputScope>>,
+    parents: Query<&ChildOf>,
 ) {
     // Collect all entities that need update
     let mut to_update: Vec<Entity> = Vec::new();
@@ -473,7 +488,22 @@ pub(crate) fn update_border_visuals(
         if let Ok((_, interaction, mut border, style, is_disabled, is_active, is_selected)) =
             query.get_mut(entity)
         {
-            *border = BorderColor(style.resolve(*interaction, is_active, is_selected, is_disabled));
+            let effective_interaction = if let Some(ref scope) = scope {
+                if !is_in_scope(entity, scope, &parents) {
+                    Interaction::None
+                } else {
+                    *interaction
+                }
+            } else {
+                *interaction
+            };
+
+            *border = BorderColor(style.resolve(
+                effective_interaction,
+                is_active,
+                is_selected,
+                is_disabled,
+            ));
         }
     }
 }
