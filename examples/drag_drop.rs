@@ -73,14 +73,7 @@ fn setup(mut commands: Commands) {
             ..default()
         })
         .with_children(|parent| {
-            // Title
-            parent.spawn((
-                Text::new("Drag & Drop Example"),
-                TextFont {
-                    font_size: 32.0,
-                    ..default()
-                },
-            ));
+            parent.ui_text(TextRole::Heading, "Drag & Drop Example");
 
             // Draggable items row
             parent
@@ -108,15 +101,7 @@ fn setup(mut commands: Commands) {
                     }
                 });
 
-            // Hint
-            parent.spawn((
-                Text::new("Drag items to slots. Check console for logs."),
-                TextFont {
-                    font_size: 16.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(0.5, 0.5, 0.5)),
-            ));
+            parent.ui_text(TextRole::Caption, "Drag items to slots. Check console for logs.");
         });
 }
 
@@ -138,13 +123,7 @@ fn spawn_draggable_item(parent: &mut ChildSpawnerCommands, name: &'static str, c
             InteractiveVisual,
         ))
         .with_children(|item| {
-            item.spawn((
-                Text::new(name),
-                TextFont {
-                    font_size: 14.0,
-                    ..default()
-                },
-            ));
+            item.ui_text(TextRole::Body, name);
         });
 }
 
@@ -166,13 +145,6 @@ fn spawn_drop_slot(parent: &mut ChildSpawnerCommands, index: usize) {
             OnDrop::new(DropIntoSlotAction { slot_index: index }),
         ))
         .with_children(|slot| {
-            slot.spawn((
-                Text::new(format!("Slot {}", index)),
-                TextFont {
-                    font_size: 14.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(0.5, 0.5, 0.5)),
-            ));
+            slot.ui_text(TextRole::Label, format!("Slot {}", index));
         });
 }

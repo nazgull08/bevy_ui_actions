@@ -1,4 +1,5 @@
 use crate::core::action::UiAction;
+use crate::core::theme::UiThemedText;
 use crate::interactions::OnClick;
 use crate::widgets::InteractiveVisual;
 use bevy::prelude::*;
@@ -68,6 +69,7 @@ impl SpawnUiExt for ChildSpawnerCommands<'_> {
                     font_size: config.font_size,
                     ..default()
                 },
+                UiThemedText,
             ));
         })
         .id()

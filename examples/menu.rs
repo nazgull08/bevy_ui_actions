@@ -2,9 +2,8 @@
 //!
 //! Demonstrates:
 //! - State management via actions
-//! - OnHover actions for UI feedback
 //! - Tooltips on buttons
-//! - InteractiveVisual for automatic effects
+//! - UiTextExt for text spawning with roles
 //!
 //! Run: `cargo run --example menu -p bevy_ui_actions`
 
@@ -91,35 +90,13 @@ fn setup(mut commands: Commands) {
             ..default()
         })
         .with_children(|parent| {
-            // Title
-            parent.spawn((
-                Text::new("Main Menu"),
-                TextFont {
-                    font_size: 48.0,
-                    ..default()
-                },
-            ));
+            parent.ui_text(TextRole::Title, "Main Menu");
 
-            // Status
-            parent.spawn((
-                Text::new("State: Menu"),
-                TextFont {
-                    font_size: 24.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(0.7, 0.7, 0.7)),
-                StatusText,
-            ));
+            parent
+                .ui_text(TextRole::Heading, "State: Menu")
+                .insert(StatusText);
 
-            // Hint
-            parent.spawn((
-                Text::new("Hover over buttons to see tooltips"),
-                TextFont {
-                    font_size: 16.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(0.5, 0.5, 0.5)),
-            ));
+            parent.ui_text(TextRole::Label, "Hover over buttons to see tooltips");
 
             // Spacer
             parent.spawn(Node {
@@ -172,13 +149,7 @@ fn spawn_menu_button(
             InteractiveVisual,
         ))
         .with_children(|btn| {
-            btn.spawn((
-                Text::new(label),
-                TextFont {
-                    font_size: 20.0,
-                    ..default()
-                },
-            ));
+            btn.ui_text(TextRole::Button, label);
         });
 }
 

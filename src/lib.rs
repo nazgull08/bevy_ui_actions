@@ -9,7 +9,10 @@ pub mod prelude;
 pub use plugin::UiActionsPlugin;
 
 // Re-export core
-pub use core::{ButtonConfig, ButtonStyle, SpawnActionButton, SpawnUiExt, UiAction};
+pub use core::{
+    ButtonConfig, ButtonStyle, SpawnActionButton, SpawnUiExt, TextRole, UiAction, UiTextExt,
+    UiTheme,
+};
 
 // Re-export interactions
 pub use interactions::{

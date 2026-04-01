@@ -4,6 +4,7 @@
 //! - ProgressBar with different styles (HP, MP, SP, attributes)
 //! - Dynamic value updates
 //! - SpawnProgressBarExt helper
+//! - UiTextExt for labels
 //!
 //! Run: `cargo run --example progress_bar -p bevy_ui_actions`
 
@@ -80,14 +81,7 @@ fn setup(mut commands: Commands) {
             ..default()
         })
         .with_children(|parent| {
-            // Title
-            parent.spawn((
-                Text::new("Progress Bar Example"),
-                TextFont {
-                    font_size: 32.0,
-                    ..default()
-                },
-            ));
+            parent.ui_text(TextRole::Heading, "Progress Bar Example");
 
             // Stats panel
             parent
@@ -98,7 +92,6 @@ fn setup(mut commands: Commands) {
                     ..default()
                 })
                 .with_children(|panel| {
-                    // HP bar
                     spawn_labeled_bar(
                         panel,
                         "Health",
@@ -106,11 +99,7 @@ fn setup(mut commands: Commands) {
                         0.75,
                         HealthBar,
                     );
-
-                    // MP bar
                     spawn_labeled_bar(panel, "Mana", ProgressBarConfig::mana(), 0.5, ManaBar);
-
-                    // SP bar
                     spawn_labeled_bar(
                         panel,
                         "Stamina",
@@ -118,8 +107,6 @@ fn setup(mut commands: Commands) {
                         0.6,
                         StaminaBar,
                     );
-
-                    // Attribute bar
                     spawn_labeled_bar(
                         panel,
                         "Strength",
@@ -127,31 +114,21 @@ fn setup(mut commands: Commands) {
                             width: Val::Px(200.0),
                             ..ProgressBarConfig::attribute()
                         },
-                        8.0 / 30.0, // 8 out of 30
+                        8.0 / 30.0,
                         StrengthBar,
                     );
                 });
 
             // Current values text
-            parent.spawn((
-                Text::new(""),
-                TextFont {
-                    font_size: 16.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(0.7, 0.7, 0.7)),
-                StatsText,
-            ));
+            parent
+                .ui_text(TextRole::Body, "")
+                .insert(StatsText);
 
             // Controls hint
-            parent.spawn((
-                Text::new("Controls: Q/W - Health | A/S - Mana | Z/X - Stamina | 1/2 - Strength"),
-                TextFont {
-                    font_size: 14.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(0.5, 0.5, 0.5)),
-            ));
+            parent.ui_text(
+                TextRole::Caption,
+                "Controls: Q/W - Health | A/S - Mana | Z/X - Stamina | 1/2 - Strength",
+            );
         });
 }
 
@@ -170,21 +147,12 @@ fn spawn_labeled_bar<M: Component>(
             ..default()
         })
         .with_children(|row| {
-            // Label
-            row.spawn((
-                Text::new(format!("{:8}", label)),
-                TextFont {
-                    font_size: 16.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(0.8, 0.8, 0.8)),
-                Node {
+            row.ui_text(TextRole::Button, format!("{:8}", label))
+                .insert(Node {
                     width: Val::Px(80.0),
                     ..default()
-                },
-            ));
+                });
 
-            // Progress bar with marker
             let bar_entity = row.spawn_progress_bar(config, initial);
             row.commands().entity(bar_entity).insert(marker);
         });
@@ -193,31 +161,24 @@ fn spawn_labeled_bar<M: Component>(
 // ============ Input ============
 
 fn handle_input(keys: Res<ButtonInput<KeyCode>>, mut stats: ResMut<PlayerStats>) {
-    // Health: Q to damage, W to heal
     if keys.just_pressed(KeyCode::KeyQ) {
         stats.health = (stats.health - 10.0).max(0.0);
     }
     if keys.just_pressed(KeyCode::KeyW) {
         stats.health = (stats.health + 10.0).min(stats.health_max);
     }
-
-    // Mana: A to spend, S to restore
     if keys.just_pressed(KeyCode::KeyA) {
         stats.mana = (stats.mana - 15.0).max(0.0);
     }
     if keys.just_pressed(KeyCode::KeyS) {
         stats.mana = (stats.mana + 15.0).min(stats.mana_max);
     }
-
-    // Stamina: Z to drain, X to recover
     if keys.just_pressed(KeyCode::KeyZ) {
         stats.stamina = (stats.stamina - 20.0).max(0.0);
     }
     if keys.just_pressed(KeyCode::KeyX) {
         stats.stamina = (stats.stamina + 20.0).min(stats.stamina_max);
     }
-
-    // Strength: 1 to decrease, 2 to increase
     if keys.just_pressed(KeyCode::Digit1) && stats.strength > 0 {
         stats.strength -= 1;
     }
@@ -275,19 +236,15 @@ fn sync_bars(
     if let Ok(mut bar) = hp_query.get_single_mut() {
         bar.set(stats.health / stats.health_max);
     }
-
     if let Ok(mut bar) = mp_query.get_single_mut() {
         bar.set(stats.mana / stats.mana_max);
     }
-
     if let Ok(mut bar) = sp_query.get_single_mut() {
         bar.set(stats.stamina / stats.stamina_max);
     }
-
     if let Ok(mut bar) = str_query.get_single_mut() {
         bar.set(stats.strength as f32 / 30.0);
     }
-
     if let Ok(mut text) = text_query.get_single_mut() {
         **text = format!(
             "HP: {:.0}/{:.0}  MP: {:.0}/{:.0}  SP: {:.0}/{:.0}  STR: {}/30",

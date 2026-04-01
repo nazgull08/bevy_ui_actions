@@ -1,4 +1,7 @@
-pub use crate::core::{ButtonConfig, ButtonStyle, SpawnActionButton, SpawnUiExt, UiAction};
+pub use crate::core::{
+    ButtonConfig, ButtonStyle, SpawnActionButton, SpawnUiExt, TextRole, UiAction, UiTextExt,
+    UiTheme,
+};
 
 pub use crate::interactions::{
     DragGhost, DragGhostStyle, DragPhase, DragState, Draggable, DropTarget, OnClick, OnDragCancel,

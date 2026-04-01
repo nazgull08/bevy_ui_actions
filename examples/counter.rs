@@ -4,6 +4,7 @@
 //! - OnClick actions
 //! - OnHover/OnPress actions (logging)
 //! - InteractiveVisual for automatic feedback
+//! - UiTextExt for text spawning
 //!
 //! Run: `cargo run --example counter -p bevy_ui_actions`
 
@@ -83,14 +84,9 @@ fn setup(mut commands: Commands) {
         })
         .with_children(|parent| {
             // Counter text
-            parent.spawn((
-                Text::new("0"),
-                TextFont {
-                    font_size: 48.0,
-                    ..default()
-                },
-                CounterText,
-            ));
+            parent
+                .ui_text_styled("0", 48.0, Color::WHITE)
+                .insert(CounterText);
 
             // Buttons row
             parent
@@ -117,13 +113,7 @@ fn setup(mut commands: Commands) {
                         InteractiveVisual,
                     ))
                     .with_children(|btn| {
-                        btn.spawn((
-                            Text::new("-"),
-                            TextFont {
-                                font_size: 32.0,
-                                ..default()
-                            },
-                        ));
+                        btn.ui_text_styled("-", 32.0, Color::WHITE);
                     });
 
                     // Increment button — using helper
@@ -131,14 +121,7 @@ fn setup(mut commands: Commands) {
                 });
 
             // Hint
-            parent.spawn((
-                Text::new("Check console for hover/press logs on '-' button"),
-                TextFont {
-                    font_size: 16.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(0.5, 0.5, 0.5)),
-            ));
+            parent.ui_text(TextRole::Caption, "Check console for hover/press logs on '-' button");
         });
 }
 

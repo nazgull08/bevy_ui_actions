@@ -115,24 +115,8 @@ fn setup(mut commands: Commands, equipped: Res<EquippedItem>) {
             ..default()
         })
         .with_children(|parent| {
-            // Title
-            parent.spawn((
-                Text::new("Rich Tooltip Example"),
-                TextFont {
-                    font_size: 28.0,
-                    ..default()
-                },
-            ));
-
-            // Subtitle
-            parent.spawn((
-                Text::new("Hover over items to see tooltips"),
-                TextFont {
-                    font_size: 14.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(0.6, 0.6, 0.6)),
-            ));
+            parent.ui_text(TextRole::Heading, "Rich Tooltip Example");
+            parent.ui_text(TextRole::Label, "Hover over items to see tooltips");
 
             // Simple tooltips row
             parent
@@ -143,14 +127,7 @@ fn setup(mut commands: Commands, equipped: Res<EquippedItem>) {
                     ..default()
                 })
                 .with_children(|col| {
-                    col.spawn((
-                        Text::new("Simple Tooltips"),
-                        TextFont {
-                            font_size: 16.0,
-                            ..default()
-                        },
-                        TextColor(Color::srgb(0.8, 0.8, 0.8)),
-                    ));
+                    col.ui_text(TextRole::Button, "Simple Tooltips");
 
                     col.spawn(Node {
                         flex_direction: FlexDirection::Row,
@@ -173,14 +150,7 @@ fn setup(mut commands: Commands, equipped: Res<EquippedItem>) {
                     ..default()
                 })
                 .with_children(|col| {
-                    col.spawn((
-                        Text::new("Rich Tooltips (Items)"),
-                        TextFont {
-                            font_size: 16.0,
-                            ..default()
-                        },
-                        TextColor(Color::srgb(0.8, 0.8, 0.8)),
-                    ));
+                    col.ui_text(TextRole::Button, "Rich Tooltips (Items)");
 
                     col.spawn(Node {
                         flex_direction: FlexDirection::Row,
@@ -194,15 +164,7 @@ fn setup(mut commands: Commands, equipped: Res<EquippedItem>) {
                     });
                 });
 
-            // Hint
-            parent.spawn((
-                Text::new("Green = better, Red = worse than equipped"),
-                TextFont {
-                    font_size: 11.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(0.4, 0.4, 0.4)),
-            ));
+            parent.ui_text(TextRole::Caption, "Green = better, Red = worse than equipped");
         });
 }
 
@@ -222,13 +184,7 @@ fn spawn_simple_button(parent: &mut ChildSpawnerCommands, label: &str, tooltip_t
             InteractiveVisual,
         ))
         .with_children(|btn| {
-            btn.spawn((
-                Text::new(label),
-                TextFont {
-                    font_size: 14.0,
-                    ..default()
-                },
-            ));
+            btn.ui_text(TextRole::Body, label);
         });
 }
 
@@ -260,27 +216,21 @@ fn spawn_item_slot(parent: &mut ChildSpawnerCommands, item: &ItemData, equipped:
             InteractiveVisual,
         ))
         .with_children(|slot| {
-            slot.spawn((
-                Text::new(match item.category {
-                    "Weapon" => "⚔",
-                    "Armor" => "🛡",
-                    "Consumable" => "🧪",
-                    _ => "📦",
-                }),
-                TextFont {
-                    font_size: 28.0,
-                    ..default()
+            slot.ui_text_styled(
+                match item.category {
+                    "Weapon" => "W",
+                    "Armor" => "A",
+                    "Consumable" => "C",
+                    _ => "?",
                 },
-            ));
+                28.0,
+                Color::WHITE,
+            );
 
-            slot.spawn((
-                Text::new(item.name.split_whitespace().next().unwrap_or(item.name)),
-                TextFont {
-                    font_size: 10.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(0.7, 0.7, 0.7)),
-            ));
+            slot.ui_text(
+                TextRole::Caption,
+                item.name.split_whitespace().next().unwrap_or(item.name),
+            );
         });
 }
 
@@ -294,7 +244,6 @@ fn build_item_tooltip(item: &ItemData, equipped: &EquippedItem) -> Tooltip {
         })
         .separator();
 
-    // Stats with comparison
     if let Some(damage) = item.damage {
         let diff = calc_diff(damage, equipped.damage);
         builder = builder.stat_diff("Damage", format!("{:.0}", damage), diff);
@@ -310,10 +259,8 @@ fn build_item_tooltip(item: &ItemData, equipped: &EquippedItem) -> Tooltip {
         builder = builder.stat_diff("Speed", format!("{:.1}x", speed), diff);
     }
 
-    // Description
     builder = builder.separator().text(item.description);
 
-    // Footer
     builder = builder
         .separator()
         .key_value("Weight", format!("{:.1}", item.weight))

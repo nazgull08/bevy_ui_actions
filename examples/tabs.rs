@@ -4,7 +4,7 @@
 //! - TabGroup, Tab, TabContent
 //! - Automatic content visibility switching
 //! - Active marker for styling
-//! - VisualStyle for custom colors
+//! - UiTextExt for text spawning
 //!
 //! Run: `cargo run --example tabs -p bevy_ui_actions`
 
@@ -35,14 +35,7 @@ fn setup(mut commands: Commands) {
             ..default()
         })
         .with_children(|parent| {
-            // Title
-            parent.spawn((
-                Text::new("Tabs Example"),
-                TextFont {
-                    font_size: 32.0,
-                    ..default()
-                },
-            ));
+            parent.ui_text(TextRole::Heading, "Tabs Example");
 
             // Tab container
             parent
@@ -102,15 +95,7 @@ fn setup(mut commands: Commands) {
                     );
                 });
 
-            // Hint
-            parent.spawn((
-                Text::new("Click tabs to switch between panels"),
-                TextFont {
-                    font_size: 14.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(0.5, 0.5, 0.5)),
-            ));
+            parent.ui_text(TextRole::Caption, "Click tabs to switch between panels");
         });
 }
 
@@ -141,20 +126,12 @@ fn spawn_tab_button(parent: &mut ChildSpawnerCommands, index: usize, label: &str
         Interaction::None,
     ));
 
-    // First tab is active by default
     if is_active {
         entity.insert(Active);
     }
 
     entity.with_children(|btn| {
-        btn.spawn((
-            Text::new(label),
-            TextFont {
-                font_size: 16.0,
-                ..default()
-            },
-            TextColor(Color::srgb(0.7, 0.7, 0.7)),
-        ));
+        btn.ui_text(TextRole::Button, label);
     });
 }
 
@@ -188,24 +165,7 @@ fn spawn_tab_content(
             TabContent::new(index),
         ))
         .with_children(|panel| {
-            // Title
-            panel.spawn((
-                Text::new(title),
-                TextFont {
-                    font_size: 18.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(0.9, 0.9, 0.9)),
-            ));
-
-            // Content
-            panel.spawn((
-                Text::new(content),
-                TextFont {
-                    font_size: 14.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(0.7, 0.7, 0.7)),
-            ));
+            panel.ui_text(TextRole::Heading, title);
+            panel.ui_text(TextRole::Body, content);
         });
 }

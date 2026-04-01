@@ -79,14 +79,7 @@ fn setup(mut commands: Commands) {
             ..default()
         })
         .with_children(|parent| {
-            // Title
-            parent.spawn((
-                Text::new("Right Click Example"),
-                TextFont {
-                    font_size: 32.0,
-                    ..default()
-                },
-            ));
+            parent.ui_text(TextRole::Heading, "Right Click Example");
 
             // Items row
             parent
@@ -101,26 +94,11 @@ fn setup(mut commands: Commands) {
                     spawn_item(row, "Potion", Color::srgb(0.3, 0.7, 0.4));
                 });
 
-            // Hint
-            parent.spawn((
-                Text::new("Left click to select, Right click for context menu"),
-                TextFont {
-                    font_size: 16.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(0.5, 0.5, 0.5)),
-            ));
+            parent.ui_text(TextRole::Label, "Left click to select, Right click for context menu");
 
-            // Log display
-            parent.spawn((
-                Text::new("Actions will appear here..."),
-                TextFont {
-                    font_size: 18.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(0.6, 0.8, 0.6)),
-                LogText,
-            ));
+            parent
+                .ui_text_styled("Actions will appear here...", 18.0, Color::srgb(0.6, 0.8, 0.6))
+                .insert(LogText);
         });
 }
 
@@ -141,13 +119,7 @@ fn spawn_item(parent: &mut ChildSpawnerCommands, name: &'static str, color: Colo
             InteractiveVisual,
         ))
         .with_children(|item| {
-            item.spawn((
-                Text::new(name),
-                TextFont {
-                    font_size: 16.0,
-                    ..default()
-                },
-            ));
+            item.ui_text(TextRole::Button, name);
         });
 }
 

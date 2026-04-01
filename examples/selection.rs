@@ -25,7 +25,6 @@ fn main() {
 // Resources
 // ============================================================
 
-/// Tracks which slot is currently selected
 #[derive(Resource, Default)]
 struct SelectedSlot {
     entity: Option<Entity>,
@@ -55,7 +54,6 @@ struct SelectSlotAction {
 
 impl UiAction for SelectSlotAction {
     fn execute(&self, world: &mut World) {
-        // Find clicked slot entity
         let clicked_entity = {
             let mut query = world.query::<(Entity, &Slot)>();
             query
@@ -68,10 +66,8 @@ impl UiAction for SelectSlotAction {
             return;
         };
 
-        // Get current selection
         let current_selected = world.resource::<SelectedSlot>().entity;
 
-        // If clicking same slot, deselect
         if current_selected == Some(clicked) {
             world.entity_mut(clicked).remove::<Selected>();
             let mut selected = world.resource_mut::<SelectedSlot>();
@@ -81,12 +77,10 @@ impl UiAction for SelectSlotAction {
             return;
         }
 
-        // Remove selection from previous slot
         if let Some(prev) = current_selected {
             world.entity_mut(prev).remove::<Selected>();
         }
 
-        // Select new slot
         world.entity_mut(clicked).insert(Selected);
         let mut selected = world.resource_mut::<SelectedSlot>();
         selected.entity = Some(clicked);
@@ -113,24 +107,8 @@ fn setup(mut commands: Commands) {
             ..default()
         })
         .with_children(|root| {
-            // Title
-            root.spawn((
-                Text::new("Selection + BorderStyle Example"),
-                TextFont {
-                    font_size: 24.0,
-                    ..default()
-                },
-            ));
-
-            // Instructions
-            root.spawn((
-                Text::new("Click slots to select. Click again to deselect."),
-                TextFont {
-                    font_size: 14.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(0.6, 0.6, 0.6)),
-            ));
+            root.ui_text(TextRole::Heading, "Selection + BorderStyle Example");
+            root.ui_text(TextRole::Label, "Click slots to select. Click again to deselect.");
 
             // Slot grid
             root.spawn(Node {
@@ -143,7 +121,7 @@ fn setup(mut commands: Commands) {
             })
             .with_children(|grid| {
                 for i in 0..8 {
-                    let has_item = i < 3; // First 3 slots have items
+                    let has_item = i < 3;
                     spawn_slot(grid, i, has_item);
                 }
             });
@@ -161,15 +139,9 @@ fn setup(mut commands: Commands) {
                 BorderColor(Color::srgb(0.3, 0.3, 0.35)),
             ))
             .with_children(|panel| {
-                panel.spawn((
-                    Text::new("No slot selected"),
-                    TextFont {
-                        font_size: 14.0,
-                        ..default()
-                    },
-                    TextColor(Color::srgb(0.7, 0.7, 0.7)),
-                    SelectionInfoText,
-                ));
+                panel
+                    .ui_text(TextRole::Body, "No slot selected")
+                    .insert(SelectionInfoText);
             });
         });
 }
@@ -194,17 +166,14 @@ fn spawn_slot(parent: &mut ChildSpawnerCommands, index: usize, has_item: bool) {
             BackgroundColor(bg_color),
             BorderColor(Color::srgb(0.35, 0.35, 0.40)),
             Slot { index, has_item },
-            // Visual feedback components
             InteractiveVisual,
             VisualStyle::slot(),
             BorderStyle::slot(),
-            // Interactions
             OnClick::new(SelectSlotAction { index }),
             Interaction::None,
         ))
         .with_children(|slot| {
             if has_item {
-                // Item icon placeholder
                 slot.spawn((
                     Node {
                         width: Val::Px(50.0),
@@ -214,24 +183,16 @@ fn spawn_slot(parent: &mut ChildSpawnerCommands, index: usize, has_item: bool) {
                     BackgroundColor(item_color(index)),
                 ));
             } else {
-                // Empty slot label
-                slot.spawn((
-                    Text::new(format!("{}", index)),
-                    TextFont {
-                        font_size: 12.0,
-                        ..default()
-                    },
-                    TextColor(Color::srgb(0.4, 0.4, 0.4)),
-                ));
+                slot.ui_text(TextRole::Label, format!("{}", index));
             }
         });
 }
 
 fn item_color(index: usize) -> Color {
     match index % 3 {
-        0 => Color::srgb(0.7, 0.3, 0.3), // Red
-        1 => Color::srgb(0.3, 0.7, 0.3), // Green
-        _ => Color::srgb(0.3, 0.3, 0.7), // Blue
+        0 => Color::srgb(0.7, 0.3, 0.3),
+        1 => Color::srgb(0.3, 0.7, 0.3),
+        _ => Color::srgb(0.3, 0.3, 0.7),
     }
 }
 

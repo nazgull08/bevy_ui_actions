@@ -1,4 +1,4 @@
-use crate::core::ButtonStyle;
+use crate::core::{resolve_ui_theme, ButtonStyle, UiTheme};
 use crate::interactions::{
     drag_system, handle_clicks, handle_hover_actions, handle_hover_exit_actions,
     handle_press_actions, handle_right_clicks, has_draggables, DragGhostStyle, DragState,
@@ -15,7 +15,8 @@ pub struct UiActionsPlugin;
 
 impl Plugin for UiActionsPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<ButtonStyle>()
+        app.init_resource::<UiTheme>()
+            .init_resource::<ButtonStyle>()
             .init_resource::<DragState>()
             .init_resource::<DragGhostStyle>()
             .init_resource::<TooltipState>()
@@ -50,6 +51,8 @@ impl Plugin for UiActionsPlugin {
                     hide_tooltip
                         .run_if(should_hide_tooltip)
                         .in_set(TooltipSet::Display),
+                    // Theme: resolve font on newly spawned text
+                    resolve_ui_theme,
                     // Visual feedback (background + border)
                     update_interactive_visuals,
                     update_border_visuals,
