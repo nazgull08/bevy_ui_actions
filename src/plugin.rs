@@ -6,7 +6,7 @@ use crate::interactions::{
 use crate::widgets::{
     clamp_scroll_bounds, handle_scroll_input, handle_scrollbar_drag, handle_tab_clicks,
     handle_track_click, has_scroll_views, hide_tooltip, should_hide_tooltip, should_show_tooltip,
-    show_tooltip,
+    show_tooltip, ListItemSelected,
     sync_active_tab_marker, sync_tab_content_visibility, update_border_visuals,
     update_interactive_visuals, update_progress_bars, update_scrollbar_thumb,
     update_tooltip_hover, ScrollbarDragState, TooltipSet, TooltipState, TooltipStyle,
@@ -24,6 +24,7 @@ impl Plugin for UiActionsPlugin {
             .init_resource::<TooltipState>()
             .init_resource::<TooltipStyle>()
             .init_resource::<ScrollbarDragState>()
+            .add_event::<ListItemSelected>()
             // Configure tooltip system ordering
             .configure_sets(
                 Update,

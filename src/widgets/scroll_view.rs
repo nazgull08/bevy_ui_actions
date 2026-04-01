@@ -469,6 +469,11 @@ pub(crate) fn clamp_scroll_bounds(
     for (scroll_view, mut scroll_pos, viewport_node, children) in &mut query {
         let viewport_size = viewport_node.size();
 
+        // Skip clamping when node is hidden (Display::None → size is 0)
+        if viewport_size.x <= 0.0 && viewport_size.y <= 0.0 {
+            continue;
+        }
+
         // Calculate total content size from children
         let mut content_width: f32 = 0.0;
         let mut content_height: f32 = 0.0;
