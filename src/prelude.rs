@@ -24,3 +24,9 @@ pub use crate::widgets::{
 };
 
 pub use crate::UiActionsPlugin;
+
+#[cfg(feature = "viewport3d")]
+pub use crate::widgets::{
+    Viewport3d, Viewport3dCamera, Viewport3dConfig, Viewport3dDragState, Viewport3dHandle,
+    Viewport3dPivot, Viewport3dRotation, SpawnViewport3dExt,
+};

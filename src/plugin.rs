@@ -17,6 +17,11 @@ use crate::widgets::{
     update_interactive_visuals, update_progress_bars, update_scrollbar_thumb,
     update_tooltip_hover, update_visited_link_colors,
 };
+#[cfg(feature = "viewport3d")]
+use crate::widgets::{
+    has_viewports, viewport3d_cleanup, viewport3d_drag_rotate, viewport3d_track,
+    Viewport3dDragState, Viewport3dTracked,
+};
 use bevy::prelude::*;
 
 pub struct UiActionsPlugin;
@@ -120,5 +125,20 @@ impl Plugin for UiActionsPlugin {
                     ),
                 ),
             );
+
+        // Viewport3d (behind feature flag)
+        #[cfg(feature = "viewport3d")]
+        {
+            app.init_resource::<Viewport3dDragState>()
+                .init_resource::<Viewport3dTracked>()
+                .add_systems(
+                    Update,
+                    (
+                        viewport3d_track,
+                        viewport3d_drag_rotate.run_if(has_viewports),
+                        viewport3d_cleanup,
+                    ),
+                );
+        }
     }
 }

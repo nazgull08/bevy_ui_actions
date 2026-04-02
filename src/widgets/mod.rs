@@ -7,6 +7,8 @@ mod progress_bar;
 mod scroll_view;
 mod tabs;
 mod tooltip;
+#[cfg(feature = "viewport3d")]
+mod viewport3d;
 mod visual;
 
 pub use progress_bar::{ProgressBar, ProgressBarConfig, ProgressBarFill, SpawnProgressBarExt};
@@ -56,4 +58,14 @@ pub use hypertext::{
     SpawnHyperTextExt,
 };
 pub(crate) use hypertext::{apply_initial_visited_colors, has_hypertext, hypertext_click, hypertext_hover, update_visited_link_colors};
+#[cfg(feature = "viewport3d")]
+pub use viewport3d::{
+    Viewport3d, Viewport3dCamera, Viewport3dConfig, Viewport3dDragState, Viewport3dHandle,
+    Viewport3dPivot, Viewport3dRotation, SpawnViewport3dExt,
+};
+#[cfg(feature = "viewport3d")]
+pub(crate) use viewport3d::{
+    has_viewports, viewport3d_cleanup, viewport3d_drag_rotate, viewport3d_track,
+    Viewport3dTracked,
+};
 pub(crate) use visual::{update_border_visuals, update_interactive_visuals};

@@ -138,14 +138,8 @@ impl DialogueQueue {
 // ============================================================
 
 /// Default dialogue config, used when `DialogueRequest.config` is `None`.
-#[derive(Resource, Clone, Debug)]
+#[derive(Resource, Clone, Debug, Default)]
 pub struct DialogueStyle(pub DialogueConfig);
-
-impl Default for DialogueStyle {
-    fn default() -> Self {
-        Self(DialogueConfig::default())
-    }
-}
 
 // ============================================================
 // Topic Registry
@@ -468,6 +462,7 @@ pub(crate) fn handle_topic_panel_clicks(
 }
 
 /// Hover highlight for topic panel buttons — changes text color on hover.
+#[allow(clippy::type_complexity)]
 pub(crate) fn topic_button_hover(
     query: Query<(&Interaction, &Children), (Changed<Interaction>, With<DialogueTopicButton>)>,
     dialogue_query: Query<&DialogueBox>,
