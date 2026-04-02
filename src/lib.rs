@@ -1,4 +1,4 @@
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 //! # bevy_ui_actions
 //!
 //! Action-driven UI toolkit for [Bevy](https://bevyengine.org/) game engine.
@@ -71,7 +71,7 @@ pub use plugin::UiActionsPlugin;
 // Re-export core
 pub use core::{
     ButtonConfig, ButtonStyle, NodeExt, SpawnActionButton, SpawnUiExt, TextRole, UiAction,
-    UiInputScope, UiTextExt, UiTheme,
+    UiInputScope, UiTextExt, UiTheme, UiThemedText,
 };
 
 // Re-export interactions

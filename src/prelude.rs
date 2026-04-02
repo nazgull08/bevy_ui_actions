@@ -1,6 +1,6 @@
 pub use crate::core::{
     ButtonConfig, ButtonStyle, NodeExt, SpawnActionButton, SpawnUiExt, TextRole, UiAction,
-    UiInputScope, UiTextExt, UiTheme,
+    UiInputScope, UiTextExt, UiTheme, UiThemedText,
 };
 
 pub use crate::interactions::{
