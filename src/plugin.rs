@@ -4,13 +4,18 @@ use crate::interactions::{
     handle_press_actions, handle_right_clicks, has_draggables, DragGhostStyle, DragState,
 };
 use crate::widgets::{
-    clamp_scroll_bounds, handle_dismiss_event, handle_modal_dismiss, handle_scroll_input,
-    handle_scrollbar_drag, handle_tab_clicks, handle_track_click, has_scroll_views, hide_tooltip,
-    process_modal_queue, should_hide_tooltip, should_show_tooltip, show_tooltip, ListItemSelected,
-    ModalQueue, ModalStyle, sync_active_tab_marker, sync_tab_content_visibility,
-    update_border_visuals, update_interactive_visuals, update_progress_bars,
-    update_scrollbar_thumb, update_tooltip_hover, DismissModalEvent, ScrollbarDragState,
-    TooltipSet, TooltipState, TooltipStyle,
+    clamp_scroll_bounds, handle_dialogue_dismiss_event, handle_dialogue_dismiss_input,
+    handle_dialogue_topic, handle_dismiss_event, handle_modal_dismiss, handle_scroll_input,
+    handle_scrollbar_drag, handle_tab_clicks, handle_topic_panel_clicks, handle_track_click, topic_button_hover,
+    apply_initial_visited_colors, has_dialogue, has_hypertext, has_scroll_views, hide_tooltip,
+    hypertext_click, hypertext_hover, process_dialogue_queue, process_modal_queue,
+    should_hide_tooltip,
+    should_show_tooltip, show_tooltip, update_topic_panel, DialogueQueue, DialogueStyle,
+    DismissDialogueEvent, DismissModalEvent, HyperLinkClicked, ListItemSelected, ModalQueue,
+    ModalStyle, ScrollbarDragState, TopicDiscovered, TooltipSet, TooltipState, TooltipStyle,
+    sync_active_tab_marker, sync_tab_content_visibility, update_border_visuals,
+    update_interactive_visuals, update_progress_bars, update_scrollbar_thumb,
+    update_tooltip_hover, update_visited_link_colors,
 };
 use bevy::prelude::*;
 
@@ -27,8 +32,13 @@ impl Plugin for UiActionsPlugin {
             .init_resource::<ScrollbarDragState>()
             .init_resource::<ModalStyle>()
             .init_resource::<ModalQueue>()
+            .init_resource::<DialogueQueue>()
+            .init_resource::<DialogueStyle>()
             .add_event::<ListItemSelected>()
             .add_event::<DismissModalEvent>()
+            .add_event::<DismissDialogueEvent>()
+            .add_event::<HyperLinkClicked>()
+            .add_event::<TopicDiscovered>()
             // Configure tooltip system ordering
             .configure_sets(
                 Update,
@@ -42,30 +52,32 @@ impl Plugin for UiActionsPlugin {
             .add_systems(
                 Update,
                 (
-                    // Click actions
-                    handle_clicks,
-                    handle_right_clicks,
-                    // Hover actions
-                    handle_hover_actions,
-                    handle_hover_exit_actions,
-                    handle_press_actions,
-                    // Drag
-                    drag_system.run_if(has_draggables),
-                    // Tooltip systems with proper ordering
-                    update_tooltip_hover.in_set(TooltipSet::DetectHover),
-                    show_tooltip
-                        .run_if(should_show_tooltip)
-                        .in_set(TooltipSet::Display),
-                    hide_tooltip
-                        .run_if(should_hide_tooltip)
-                        .in_set(TooltipSet::Display),
-                    // Theme: resolve font on newly spawned text
-                    resolve_ui_theme,
-                    // Visual feedback (background + border)
-                    update_interactive_visuals,
-                    update_border_visuals,
-                    // Progress bars
-                    update_progress_bars,
+                    // Interactions
+                    (
+                        handle_clicks,
+                        handle_right_clicks,
+                        handle_hover_actions,
+                        handle_hover_exit_actions,
+                        handle_press_actions,
+                        drag_system.run_if(has_draggables),
+                    ),
+                    // Tooltips
+                    (
+                        update_tooltip_hover.in_set(TooltipSet::DetectHover),
+                        show_tooltip
+                            .run_if(should_show_tooltip)
+                            .in_set(TooltipSet::Display),
+                        hide_tooltip
+                            .run_if(should_hide_tooltip)
+                            .in_set(TooltipSet::Display),
+                    ),
+                    // Theme + visuals
+                    (
+                        resolve_ui_theme,
+                        update_interactive_visuals,
+                        update_border_visuals,
+                        update_progress_bars,
+                    ),
                     // Scroll
                     (
                         handle_scroll_input,
@@ -77,13 +89,35 @@ impl Plugin for UiActionsPlugin {
                         .chain()
                         .run_if(has_scroll_views),
                     // Tabs
-                    handle_tab_clicks,
-                    sync_tab_content_visibility,
-                    sync_active_tab_marker,
+                    (
+                        handle_tab_clicks,
+                        sync_tab_content_visibility,
+                        sync_active_tab_marker,
+                    ),
                     // Modal
-                    process_modal_queue,
-                    handle_modal_dismiss,
-                    handle_dismiss_event.after(handle_modal_dismiss),
+                    (
+                        process_modal_queue,
+                        handle_modal_dismiss,
+                        handle_dismiss_event.after(handle_modal_dismiss),
+                    ),
+                    // Hypertext
+                    (hypertext_click, hypertext_hover, apply_initial_visited_colors)
+                        .run_if(has_hypertext),
+                    // Dialogue
+                    (
+                        process_dialogue_queue,
+                        (
+                            handle_dialogue_dismiss_input,
+                            handle_dialogue_dismiss_event.after(handle_dialogue_dismiss_input),
+                            handle_topic_panel_clicks,
+                            topic_button_hover,
+                            handle_dialogue_topic
+                                .after(handle_topic_panel_clicks),
+                            update_topic_panel.after(handle_dialogue_topic),
+                            update_visited_link_colors.after(handle_dialogue_topic),
+                        )
+                            .run_if(has_dialogue),
+                    ),
                 ),
             );
     }

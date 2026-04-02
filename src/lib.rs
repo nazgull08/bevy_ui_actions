@@ -22,11 +22,16 @@ pub use interactions::{
 
 // Re-export widgets
 pub use widgets::{
-    Active, BorderStyle, Disabled, DismissModal, DismissModalEvent, InteractiveVisual, ListItem,
-    ListItemSelected, ListView, ListViewConfig, ListViewItems, Modal, ModalBackdrop, ModalPanel,
-    ModalQueue, ModalRequest, ModalStyle, PanelConfig, ProgressBar, ProgressBarConfig,
-    ProgressBarFill, ScrollDirection, ScrollView, ScrollViewConfig, Selected, SelectionMode,
-    SpawnListViewExt, SpawnPanelExt, SpawnProgressBarExt, SpawnScrollViewExt, StatDiff, Tab,
-    TabContent, TabGroup, Tooltip, TooltipBuilder, TooltipContent, TooltipSection, TooltipSet,
-    TooltipState, TooltipStyle, TooltipUI, VisualStyle, spawn_modal_button,
+    Active, BorderStyle, DialogueBox, DialogueConfig, DialogueContent, DialoguePosition,
+    DialogueQueue, DialogueRequest, DialogueScroll, DialogueStyle, DialogueTopicButton,
+    DialogueTopicPanel, Disabled, DismissDialogue, DismissDialogueEvent, DismissModal,
+    DismissModalEvent, HyperLinkClicked, HyperLinkSpan, HyperText, HyperTextConfig,
+    SpawnHyperTextExt, InteractiveVisual, ListItem, ListItemSelected, ListView, ListViewConfig,
+    ListViewItems, Modal, ModalBackdrop, ModalPanel, ModalQueue, ModalRequest, ModalStyle,
+    PanelConfig, ProgressBar, ProgressBarConfig, ProgressBarFill, ScrollDirection, ScrollView,
+    ScrollViewConfig, Selected, SelectionMode, SpawnListViewExt, SpawnPanelExt,
+    SpawnProgressBarExt, SpawnScrollViewExt, StatDiff, Tab, TabContent, TabGroup, Tooltip,
+    TooltipBuilder, TooltipContent, TooltipSection, TooltipSet, TooltipState, TooltipStyle,
+    TooltipUI, TopicDiscovered, TopicEntry, TopicRegistry, VisualStyle, append_dialogue_text,
+    spawn_modal_button,
 };

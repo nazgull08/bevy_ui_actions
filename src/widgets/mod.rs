@@ -1,3 +1,5 @@
+mod dialogue;
+mod hypertext;
 mod list_view;
 mod modal;
 mod panel;
@@ -39,4 +41,19 @@ pub(crate) use scroll_view::{
     has_scroll_views, update_scrollbar_thumb,
 };
 pub(crate) use modal::{handle_dismiss_event, handle_modal_dismiss, process_modal_queue};
+pub use dialogue::{
+    DialogueBox, DialogueConfig, DialogueContent, DialoguePosition, DialogueQueue,
+    DialogueRequest, DialogueScroll, DialogueStyle, DialogueTopicButton, DialogueTopicPanel,
+    DismissDialogue, DismissDialogueEvent, TopicDiscovered, TopicEntry, TopicRegistry,
+    append_dialogue_text, has_dialogue,
+};
+pub(crate) use dialogue::{
+    handle_dialogue_dismiss_event, handle_dialogue_dismiss_input, handle_dialogue_topic,
+    handle_topic_panel_clicks, process_dialogue_queue, topic_button_hover, update_topic_panel,
+};
+pub use hypertext::{
+    HyperLinkClicked, HyperLinkSpan, HyperText, HyperTextConfig, HyperTextHoverState,
+    SpawnHyperTextExt,
+};
+pub(crate) use hypertext::{apply_initial_visited_colors, has_hypertext, hypertext_click, hypertext_hover, update_visited_link_colors};
 pub(crate) use visual::{update_border_visuals, update_interactive_visuals};
