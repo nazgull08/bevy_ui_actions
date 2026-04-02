@@ -1,18 +1,29 @@
 # bevy_ui_actions
 
-Lightweight action-driven UI toolkit for [Bevy](https://bevyengine.org/).
+Action-driven UI toolkit for [Bevy](https://bevyengine.org/).
 
 Instead of matching `Interaction` changes in every system, define **action structs** that execute with full `World` access — then attach them to UI elements as components.
 
 ## Features
 
+### Core
 - **Click / Right-click / Hover / Press** — one component each, zero boilerplate
 - **Drag & drop** — state machine with threshold, ghost visual, drop targets
+- **UiTheme** — font + sizes + colors by role (`Title`, `Heading`, `Body`, `Label`, `Button`)
+- **Node presets** — `row()`, `column()`, `centered()`, `fill()`, `padded()`
+
+### Widgets
 - **Rich tooltips** — builder API with sections, stat diffs, key-value rows
 - **Tabs** — `TabGroup` / `Tab` / `TabContent` with automatic visibility
 - **Progress bars** — health / mana / stamina presets, spawn helper
-- **Visual feedback** — `InteractiveVisual` auto-colors elements on hover/press/select/disable
-- **Border feedback** — `BorderStyle` for separate border color states
+- **Visual feedback** — `InteractiveVisual` auto-colors on hover/press/select/disable
+- **Panels** — styled containers with presets (`dark`, `overlay`, `sidebar`)
+- **Scroll views** — scrollable containers with scrollbar (thumb drag + track click)
+- **List views** — selectable item lists (`None` / `Single` selection)
+- **Modals** — `ModalQueue` + backdrop + ESC dismiss + focus trap
+- **HyperText** — inline clickable `[links|key]` with glyph-level hit-testing
+- **Dialogue** — Morrowind-style dialogue box with TopicRegistry + topic panel + visited links
+- **Viewport3d** — 3D render-to-texture preview inside UI *(feature `viewport3d`)*
 
 ## Quick start
 
@@ -24,7 +35,6 @@ struct IncrementAction;
 
 impl UiAction for IncrementAction {
     fn execute(&self, world: &mut World) {
-        // Full World access — read/write any resource or entity
         world.resource_mut::<Counter>().0 += 1;
     }
 }
@@ -34,13 +44,9 @@ struct Counter(i32);
 
 fn setup(mut commands: Commands) {
     commands.spawn(Camera2d);
-
-    commands
-        .spawn(Node { ..default() })
-        .with_children(|parent| {
-            // One-liner button with action + visual feedback
-            parent.spawn_button(IncrementAction, "+1");
-        });
+    commands.spawn(Node { ..default() }).with_children(|parent| {
+        parent.spawn_button("Click me", IncrementAction);
+    });
 }
 
 fn main() {
@@ -72,33 +78,45 @@ impl UiAction for MyDropAction {
 }
 ```
 
-## Rich tooltips
+## HyperText & Dialogue
 
 ```rust
-let tooltip = Tooltip::builder()
-    .title("Iron Sword")
-    .subtitle("Weapon - Main Hand")
-    .separator()
-    .stat_diff("Damage", "12", StatDiff::Better(4.0))
-    .stat_diff("Speed", "1.0x", StatDiff::Neutral)
-    .separator()
-    .text("A reliable iron sword.")
-    .key_value("Weight", "3.5")
-    .build();
+// Inline clickable links — glyph-level AABB hit-testing
+root.spawn_hypertext(
+    &HyperTextConfig::default(),
+    "Visit the [Ancient Library|library] and speak to the [Iron Council|council].",
+);
 
-entity.insert(tooltip);
+// Morrowind-style dialogue with topic registry
+let mut registry = TopicRegistry::default();
+registry.insert("library", TopicEntry::new("Ancient Library", "Founded three centuries ago..."));
+commands.insert_resource(registry);
+
+queue.show(
+    DialogueRequest::new("Welcome, traveler. Ask about the [library].")
+        .with_speaker("Archivist"),
+);
 ```
 
-## Tabs
+## Viewport3d (feature `viewport3d`)
 
 ```rust
-commands.spawn(TabGroup::new(0)).with_children(|group| {
-    // Tab buttons
-    group.spawn((Tab::new(0), Button, InteractiveVisual, VisualStyle::tab()));
-    group.spawn((Tab::new(1), Button, InteractiveVisual, VisualStyle::tab()));
-    // Content panels
-    group.spawn(TabContent::new(0)); // visible when tab 0 is active
-    group.spawn(TabContent::new(1)); // visible when tab 1 is active
+// 3D render-to-texture preview inside UI
+let config = Viewport3dConfig {
+    size: UVec2::new(256, 256),
+    rotatable: true,
+    ..default()
+};
+let handle = commands.spawn_viewport3d(&config, &mut images);
+
+// Parent your 3D objects to the pivot
+commands.entity(handle.pivot).with_children(|pivot| {
+    pivot.spawn((
+        Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0))),
+        MeshMaterial3d(materials.add(StandardMaterial::default())),
+        Transform::IDENTITY,
+        handle.render_layer.clone(),
+    ));
 });
 ```
 
@@ -114,13 +132,25 @@ cargo run --example rich_tooltip     # Stat comparison tooltips
 cargo run --example right_click      # Left + right click actions
 cargo run --example selection        # Grid selection with BorderStyle
 cargo run --example tabs             # Tab switching
+cargo run --example scroll_view      # Scrollable content
+cargo run --example modal            # Modal dialogs
+cargo run --example hypertext        # Clickable inline links
+cargo run --example dialogue         # Morrowind-style dialogue + topics
+cargo run --example viewport3d --features viewport3d  # 3D preview
 ```
+
+## Feature flags
+
+| Feature | Description |
+|---------|-------------|
+| `viewport3d` | 3D render-to-texture widget (enables `bevy_core_pipeline` + `bevy_pbr`) |
 
 ## Compatibility
 
-| bevy_ui_actions | Bevy  |
-|-----------------|-------|
-| 0.1             | 0.16  |
+| bevy_ui_actions | Bevy |
+|-----------------|------|
+| 0.2             | 0.16 |
+| 0.1             | 0.16 |
 
 ## License
 
