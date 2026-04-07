@@ -652,26 +652,32 @@ fn build_span_rects(
 
 /// Convert screen-space cursor to local text node space.
 /// Returns `None` if cursor is outside the node bounds.
+///
+/// `cursor_position()` returns logical pixels, while UI `GlobalTransform`
+/// and `ComputedNode::size()` are in physical pixels. We scale the cursor
+/// by the UI scale factor so both coordinate spaces match.
 fn cursor_to_local(
     cursor: Vec2,
     transform: &GlobalTransform,
     computed: &ComputedNode,
 ) -> Option<Vec2> {
+    let scale_factor = 1.0 / computed.inverse_scale_factor();
+    let cursor_phys = cursor * scale_factor;
     let node_pos = transform.translation().truncate();
     let node_size = computed.size();
     let half = node_size / 2.0;
 
-    if cursor.x < node_pos.x - half.x
-        || cursor.x > node_pos.x + half.x
-        || cursor.y < node_pos.y - half.y
-        || cursor.y > node_pos.y + half.y
+    if cursor_phys.x < node_pos.x - half.x
+        || cursor_phys.x > node_pos.x + half.x
+        || cursor_phys.y < node_pos.y - half.y
+        || cursor_phys.y > node_pos.y + half.y
     {
         return None;
     }
 
     Some(Vec2::new(
-        cursor.x - (node_pos.x - half.x),
-        cursor.y - (node_pos.y - half.y),
+        cursor_phys.x - (node_pos.x - half.x),
+        cursor_phys.y - (node_pos.y - half.y),
     ))
 }
 
