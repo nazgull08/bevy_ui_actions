@@ -145,11 +145,12 @@ impl SpawnScrollViewExt for ChildSpawnerCommands<'_> {
         let track_color = config.scrollbar_track;
         let thumb_color = config.scrollbar_thumb;
 
-        // Wrapper row
+        // Wrapper row — min_height:0 lets flexbox respect overflow:scroll on children
         let wrapper = self
             .spawn(Node {
                 width: config.width,
                 height: config.height,
+                min_height: Val::Px(0.0),
                 flex_direction: FlexDirection::Row,
                 ..default()
             })
@@ -160,6 +161,7 @@ impl SpawnScrollViewExt for ChildSpawnerCommands<'_> {
         let scroll_node = Node {
             flex_grow: 1.0,
             height: Val::Percent(100.0),
+            min_height: Val::Px(0.0),
             overflow,
             flex_direction: direction,
             ..default()
@@ -280,11 +282,12 @@ impl SpawnScrollViewExt for Commands<'_, '_> {
         let track_color = config.scrollbar_track;
         let thumb_color = config.scrollbar_thumb;
 
-        // Wrapper row
+        // Wrapper row — min_height:0 lets flexbox respect overflow:scroll on children
         let wrapper = self
             .spawn(Node {
                 width: config.width,
                 height: config.height,
+                min_height: Val::Px(0.0),
                 flex_direction: FlexDirection::Row,
                 ..default()
             })

@@ -1,6 +1,6 @@
 [package]
 name = "bevy_ui_actions"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 license = "MIT"
 description = "Action-driven UI toolkit for Bevy — clicks, drag-drop, tooltips, tabs, scroll views, modals, dialogue system, 3D viewports"
@@ -87,4 +87,9 @@ path = "examples/dialogue.rs"
 [[example]]
 name = "viewport3d"
 path = "examples/viewport3d.rs"
+required-features = ["viewport3d"]
+
+[[example]]
+name = "character_sheet"
+path = "examples/character_sheet/main.rs"
 required-features = ["viewport3d"]

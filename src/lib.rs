@@ -21,6 +21,7 @@
 //! - **[`ModalQueue`]** / **[`ModalRequest`]** — modal dialogs with backdrop + ESC dismiss
 //! - **[`HyperText`]** — inline clickable links with glyph-level hit-testing
 //! - **[`DialogueQueue`]** — Morrowind-style dialogue with topic registry + topic panel
+//! - **[`TopicContainer`]** — generic topic expansion outside dialogue (works with [`HyperText`] links)
 //! - **[`Viewport3d`]** — 3D render-to-texture preview *(feature `viewport3d`)*
 //!
 //! ## Quick start
@@ -70,8 +71,8 @@ pub use plugin::UiActionsPlugin;
 
 // Re-export core
 pub use core::{
-    ButtonConfig, ButtonStyle, NodeExt, SpawnActionButton, SpawnUiExt, TextRole, UiAction,
-    UiInputScope, UiTextExt, UiTheme, UiThemedText,
+    ButtonConfig, ButtonStyle, NodeExt, SpawnActionButton, SpawnUiExt, TextPreset, TextRole,
+    UiAction, UiInputScope, UiTextExt, UiTheme, UiThemedText,
 };
 
 // Re-export interactions
@@ -92,8 +93,8 @@ pub use widgets::{
     ScrollViewConfig, Selected, SelectionMode, SpawnListViewExt, SpawnPanelExt,
     SpawnProgressBarExt, SpawnScrollViewExt, StatDiff, Tab, TabContent, TabGroup, Tooltip,
     TooltipBuilder, TooltipContent, TooltipSection, TooltipSet, TooltipState, TooltipStyle,
-    TooltipUI, TopicDiscovered, TopicEntry, TopicRegistry, VisualStyle, append_dialogue_text,
-    spawn_modal_button,
+    TooltipUI, TopicContainer, TopicDiscovered, TopicEntry, TopicRegistry, VisualStyle,
+    append_dialogue_text, append_topic_block, spawn_modal_button,
 };
 
 #[cfg(feature = "viewport3d")]

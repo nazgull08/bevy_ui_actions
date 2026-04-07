@@ -23,6 +23,7 @@ Instead of matching `Interaction` changes in every system, define **action struc
 - **Modals** — `ModalQueue` + backdrop + ESC dismiss + focus trap
 - **HyperText** — inline clickable `[links|key]` with glyph-level hit-testing
 - **Dialogue** — Morrowind-style dialogue box with TopicRegistry + topic panel + visited links
+- **TopicContainer** — generic topic expansion outside dialogue (works with HyperText links)
 - **Viewport3d** — 3D render-to-texture preview inside UI *(feature `viewport3d`)*
 
 ## Quick start
@@ -137,6 +138,7 @@ cargo run --example modal            # Modal dialogs
 cargo run --example hypertext        # Clickable inline links
 cargo run --example dialogue         # Morrowind-style dialogue + topics
 cargo run --example viewport3d --features viewport3d  # 3D preview
+cargo run --example character_sheet -p bevy_ui_actions --features viewport3d  # Full showcase
 ```
 
 ## Feature flags
@@ -147,10 +149,10 @@ cargo run --example viewport3d --features viewport3d  # 3D preview
 
 ## Compatibility
 
-| bevy_ui_actions | Bevy |
-|-----------------|------|
-| 0.2             | 0.16 |
-| 0.1             | 0.16 |
+| bevy_ui_actions | Bevy  |
+|-----------------|-------|
+| 0.2.x           | 0.16  |
+| 0.1             | 0.16  |
 
 ## License
 

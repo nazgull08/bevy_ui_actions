@@ -5,10 +5,11 @@ use crate::interactions::{
 };
 use crate::widgets::{
     clamp_scroll_bounds, handle_dialogue_dismiss_event, handle_dialogue_dismiss_input,
-    handle_dialogue_topic, handle_dismiss_event, handle_modal_dismiss, handle_scroll_input,
+    handle_dismiss_event, handle_modal_dismiss, reveal_modal_panel, handle_scroll_input,
     handle_scrollbar_drag, handle_tab_clicks, handle_topic_panel_clicks, handle_track_click, topic_button_hover,
     apply_initial_visited_colors, has_dialogue, has_hypertext, has_scroll_views, hide_tooltip,
-    hypertext_click, hypertext_hover, process_dialogue_queue, process_modal_queue,
+    hypertext_click, hypertext_hover, handle_topic_container,
+    process_dialogue_queue, process_modal_queue,
     should_hide_tooltip,
     should_show_tooltip, show_tooltip, update_topic_panel, DialogueQueue, DialogueStyle,
     DismissDialogueEvent, DismissModalEvent, HyperLinkClicked, ListItemSelected, ModalQueue,
@@ -105,8 +106,14 @@ impl Plugin for UiActionsPlugin {
                         handle_modal_dismiss,
                         handle_dismiss_event.after(handle_modal_dismiss),
                     ),
-                    // Hypertext
-                    (hypertext_click, hypertext_hover, apply_initial_visited_colors)
+                    // Hypertext + topic container
+                    (
+                        hypertext_click,
+                        hypertext_hover,
+                        apply_initial_visited_colors,
+                        handle_topic_container.after(hypertext_click),
+                        update_visited_link_colors.after(handle_topic_container),
+                    )
                         .run_if(has_hypertext),
                     // Dialogue
                     (
@@ -116,15 +123,17 @@ impl Plugin for UiActionsPlugin {
                             handle_dialogue_dismiss_event.after(handle_dialogue_dismiss_input),
                             handle_topic_panel_clicks,
                             topic_button_hover,
-                            handle_dialogue_topic
-                                .after(handle_topic_panel_clicks),
-                            update_topic_panel.after(handle_dialogue_topic),
-                            update_visited_link_colors.after(handle_dialogue_topic),
+                            update_topic_panel.after(handle_topic_container),
                         )
                             .run_if(has_dialogue),
                     ),
                 ),
             );
+
+        // Modal: reveal after layout pass (prevents size pop on first frame).
+        // Last schedule runs after PostUpdate (where Bevy computes UI layout),
+        // so ComputedNode sizes are up to date when we check for stabilization.
+        app.add_systems(Last, reveal_modal_panel);
 
         // Viewport3d (behind feature flag)
         #[cfg(feature = "viewport3d")]

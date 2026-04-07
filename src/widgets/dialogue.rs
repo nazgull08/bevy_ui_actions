@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::core::{TextRole, UiAction, UiInputScope, UiTextExt};
-use crate::widgets::hypertext::{HyperLinkClicked, HyperTextConfig, SpawnHyperTextExt};
+use crate::widgets::hypertext::{HyperLinkClicked, HyperTextConfig, SpawnHyperTextExt, TopicContainer};
 use crate::widgets::panel::{PanelConfig, SpawnPanelExt};
 use crate::widgets::scroll_view::ScrollView;
 
@@ -178,10 +178,10 @@ impl TopicEntry {
 
 /// Optional resource for automatic topic resolution in dialogues.
 ///
-/// When present, [`handle_dialogue_topic`] will look up topics from
-/// `HyperLinkClicked` events and automatically append responses
-/// to the active dialogue. Without this resource, game code must
-/// handle `HyperLinkClicked` events manually.
+/// When present, [`handle_topic_container`](crate::widgets::hypertext::handle_topic_container)
+/// will look up topics from `HyperLinkClicked` events and automatically
+/// append responses to any [`TopicContainer`]. Without this resource,
+/// game code should handle `HyperLinkClicked` events manually.
 #[derive(Resource, Default)]
 pub struct TopicRegistry {
     entries: HashMap<String, TopicEntry>,
@@ -387,60 +387,9 @@ pub(crate) fn handle_dialogue_dismiss_event(
     }
 }
 
-/// Listens for HyperLinkClicked events and appends topic responses
-/// from TopicRegistry (if available) into the dialogue scroll area.
-///
-/// Without a `TopicRegistry` resource, this system does nothing —
-/// game code should handle `HyperLinkClicked` events directly
-/// and call [`append_dialogue_text`] with the response text.
-pub(crate) fn handle_dialogue_topic(
-    mut link_events: EventReader<HyperLinkClicked>,
-    dialogue_query: Query<&DialogueBox>,
-    content_query: Query<Entity, With<DialogueContent>>,
-    mut scroll_query: Query<&mut ScrollPosition, With<DialogueScroll>>,
-    mut commands: Commands,
-    registry: Option<ResMut<TopicRegistry>>,
-    mut discovered_events: EventWriter<TopicDiscovered>,
-) {
-    let Some(mut registry) = registry else {
-        // No TopicRegistry — drain events, game code handles them.
-        for _event in link_events.read() {}
-        return;
-    };
-
-    for event in link_events.read() {
-        let Some(entry) = registry.get(&event.topic).cloned() else {
-            continue;
-        };
-
-        let Ok(content_entity) = content_query.single() else {
-            continue;
-        };
-        let Ok(mut scroll_pos) = scroll_query.single_mut() else {
-            continue;
-        };
-        let Ok(dialogue) = dialogue_query.single() else {
-            continue;
-        };
-
-        // Fire discovered event on first view
-        if !entry.discovered {
-            discovered_events.write(TopicDiscovered {
-                topic: event.topic.clone(),
-            });
-        }
-        registry.discover(&event.topic);
-
-        append_dialogue_text(
-            &mut commands,
-            content_entity,
-            &mut scroll_pos,
-            &dialogue.config,
-            &entry.title,
-            &entry.text,
-        );
-    }
-}
+// NOTE: Topic resolution (HyperLinkClicked → TopicRegistry → append)
+// is now handled by the generic `handle_topic_container` system in hypertext.rs.
+// DialogueContent gets a `TopicContainer` component at spawn time for backward compat.
 
 /// Handles clicks on topic buttons in the right panel.
 /// Converts button clicks into `HyperLinkClicked` events.
@@ -693,6 +642,10 @@ fn spawn_dialogue(
                         .commands()
                         .spawn((
                             DialogueContent,
+                            TopicContainer {
+                                hypertext_config: hypertext_config.clone(),
+                                header_role: config.topic_header_role,
+                            },
                             Node {
                                 width: Val::Percent(100.0),
                                 flex_direction: FlexDirection::Column,

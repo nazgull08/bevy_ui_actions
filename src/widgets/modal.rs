@@ -172,6 +172,12 @@ pub struct ModalBackdrop;
 #[derive(Component)]
 pub struct ModalPanel;
 
+/// Marker on the modal root: hidden until layout is computed.
+/// Removed in `PostUpdate` after Bevy's layout pass, making the modal visible.
+#[derive(Component)]
+pub(crate) struct ModalLayoutPending;
+
+
 // ============================================================
 // Public Helpers
 // ============================================================
@@ -259,6 +265,8 @@ fn spawn_modal(commands: &mut Commands, style: &ModalStyle, request: ModalReques
                 dismissable,
             },
             ModalBackdrop,
+            ModalLayoutPending,
+            Visibility::Hidden,
             Node {
                 position_type: PositionType::Absolute,
                 width: Val::Percent(100.0),
@@ -297,6 +305,40 @@ fn spawn_modal(commands: &mut Commands, style: &ModalStyle, request: ModalReques
 
     modal_entity
 }
+
+
+/// Reveals modals once panel size has stabilized (prevents size pop).
+///
+/// Waits until the `ModalPanel`'s `ComputedNode` size is non-zero and
+/// unchanged from the previous frame, then removes `ModalLayoutPending`
+/// and sets `Visibility::Visible`. This accounts for Bevy's text
+/// measurement needing 1-2 frames to settle.
+pub(crate) fn reveal_modal_panel(
+    mut commands: Commands,
+    query: Query<Entity, With<ModalLayoutPending>>,
+    panel_query: Query<&ComputedNode, With<ModalPanel>>,
+    mut last_size: Local<Vec2>,
+) {
+    for entity in &query {
+        let current_size = panel_query
+            .iter()
+            .next()
+            .map(|c| c.size())
+            .unwrap_or(Vec2::ZERO);
+
+        if current_size.x > 0.0 && current_size == *last_size {
+            // Size stabilized — safe to reveal
+            commands
+                .entity(entity)
+                .remove::<ModalLayoutPending>()
+                .insert(Visibility::Visible);
+            *last_size = Vec2::ZERO;
+        } else {
+            *last_size = current_size;
+        }
+    }
+}
+
 
 /// Handles ESC key and backdrop clicks to dismiss modal.
 pub(crate) fn handle_modal_dismiss(

@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy::text::TextLayoutInfo;
 
-use crate::core::{TextRole, UiThemedText};
+use crate::core::{TextRole, UiTextExt, UiThemedText};
 
 // ============================================================
 // Config
@@ -73,6 +73,22 @@ pub struct HyperLinkSpan {
 pub struct HyperTextHoverState {
     /// Currently hovered span_index, or None.
     pub hovered_span: Option<usize>,
+}
+
+/// Marker on a container entity (usually a column/scroll content node)
+/// that automatically expands topic responses from [`TopicRegistry`]
+/// when a [`HyperLinkClicked`] event fires from a descendant [`HyperText`].
+///
+/// Works with any layout — dialogue boxes, journal pages, glossaries, etc.
+/// Place this on the column/content entity where topic blocks should be appended.
+///
+/// The [`DialogueBox`] spawner inserts this automatically on [`DialogueContent`].
+#[derive(Component, Clone)]
+pub struct TopicContainer {
+    /// Config for rendering topic response text.
+    pub hypertext_config: HyperTextConfig,
+    /// Text role for topic headers.
+    pub header_role: TextRole,
 }
 
 // ============================================================
@@ -369,7 +385,7 @@ fn resolve_link_color(
 
 /// Updates link colors to visited_link_color when topics become discovered.
 ///
-/// Runs after `handle_dialogue_topic` discovers topics, so that all existing
+/// Runs after `handle_topic_container` discovers topics, so that all existing
 /// hypertext blocks (including the one that was just clicked) get updated.
 pub(crate) fn update_visited_link_colors(
     mut discovered_events: EventReader<crate::widgets::dialogue::TopicDiscovered>,
@@ -437,6 +453,113 @@ pub(crate) fn apply_initial_visited_colors(
 /// Run condition: true when any HyperText entities exist.
 pub fn has_hypertext(query: Query<(), With<HyperText>>) -> bool {
     !query.is_empty()
+}
+
+// ============================================================
+// TopicContainer system + helper
+// ============================================================
+
+/// Append a topic block (header + hypertext body) to a container entity.
+///
+/// This is the generic equivalent of [`append_dialogue_text`](crate::widgets::dialogue::append_dialogue_text)
+/// but works with any [`TopicContainer`], not just dialogue boxes.
+pub fn append_topic_block(
+    commands: &mut Commands,
+    container_entity: Entity,
+    config: &TopicContainer,
+    header: &str,
+    text: &str,
+) {
+    commands.entity(container_entity).with_children(|content| {
+        content
+            .spawn(Node {
+                width: Val::Percent(100.0),
+                flex_direction: FlexDirection::Column,
+                row_gap: Val::Px(8.0),
+                margin: UiRect::top(Val::Px(12.0)),
+                ..default()
+            })
+            .with_children(|block| {
+                block.ui_text(config.header_role, header);
+                block.spawn_hypertext(&config.hypertext_config, text);
+            });
+    });
+}
+
+/// Listens for [`HyperLinkClicked`] events, traverses the parent hierarchy
+/// from the source entity to find a [`TopicContainer`], and appends the
+/// topic response from [`TopicRegistry`].
+///
+/// Also fires [`TopicDiscovered`] on first view and marks the topic as discovered.
+///
+/// Without a [`TopicRegistry`] resource this system is a no-op — events pass
+/// through for game code to handle via its own `EventReader<HyperLinkClicked>`.
+pub(crate) fn handle_topic_container(
+    mut link_events: EventReader<HyperLinkClicked>,
+    container_query: Query<(Entity, &TopicContainer)>,
+    parent_query: Query<&ChildOf>,
+    mut scroll_query: Query<&mut ScrollPosition>,
+    mut commands: Commands,
+    registry: Option<ResMut<crate::widgets::dialogue::TopicRegistry>>,
+    mut discovered_events: EventWriter<crate::widgets::dialogue::TopicDiscovered>,
+) {
+    let Some(mut registry) = registry else {
+        return;
+    };
+
+    for event in link_events.read() {
+        let Some(entry) = registry.get(&event.topic).cloned() else {
+            continue;
+        };
+
+        // Walk up from event.source to find TopicContainer
+        let mut current = event.source;
+        let container = loop {
+            if let Ok(found) = container_query.get(current) {
+                break Some(found);
+            }
+            if let Ok(child_of) = parent_query.get(current) {
+                current = child_of.parent();
+            } else {
+                break None;
+            }
+        };
+
+        let Some((container_entity, topic_container)) = container else {
+            continue;
+        };
+
+        // Fire discovered event on first view
+        if !entry.discovered {
+            discovered_events.write(crate::widgets::dialogue::TopicDiscovered {
+                topic: event.topic.clone(),
+            });
+        }
+        registry.discover(&event.topic);
+
+        let tc = topic_container.clone();
+        append_topic_block(
+            &mut commands,
+            container_entity,
+            &tc,
+            &entry.title,
+            &entry.text,
+        );
+
+        // Auto-scroll: walk up from container to find ScrollPosition
+        let mut walk = container_entity;
+        loop {
+            if let Ok(mut scroll_pos) = scroll_query.get_mut(walk) {
+                scroll_pos.offset_y = f32::MAX;
+                break;
+            }
+            if let Ok(child_of) = parent_query.get(walk) {
+                walk = child_of.parent();
+            } else {
+                break;
+            }
+        }
+    }
 }
 
 // ============================================================

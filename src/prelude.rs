@@ -1,6 +1,6 @@
 pub use crate::core::{
-    ButtonConfig, ButtonStyle, NodeExt, SpawnActionButton, SpawnUiExt, TextRole, UiAction,
-    UiInputScope, UiTextExt, UiTheme, UiThemedText,
+    ButtonConfig, ButtonStyle, NodeExt, SpawnActionButton, SpawnUiExt, TextPreset, TextRole,
+    UiAction, UiInputScope, UiTextExt, UiTheme, UiThemedText,
 };
 
 pub use crate::interactions::{
@@ -13,7 +13,8 @@ pub use crate::widgets::{
     DialogueQueue, DialogueRequest, DialogueScroll, DialogueStyle, DialogueTopicButton,
     DialogueTopicPanel, Disabled, DismissDialogue, DismissDialogueEvent, DismissModal,
     DismissModalEvent, HyperLinkClicked, HyperLinkSpan, HyperText, HyperTextConfig,
-    SpawnHyperTextExt, InteractiveVisual, ListItem, ListItemSelected, ListView, ListViewConfig,
+    SpawnHyperTextExt, TopicContainer, append_topic_block,
+    InteractiveVisual, ListItem, ListItemSelected, ListView, ListViewConfig,
     ListViewItems, Modal, ModalBackdrop, ModalPanel, ModalQueue, ModalRequest, ModalStyle,
     PanelConfig, ProgressBar, ProgressBarConfig, ProgressBarFill, ScrollDirection, ScrollView,
     ScrollViewConfig, Selected, SelectionMode, SpawnListViewExt, SpawnPanelExt,

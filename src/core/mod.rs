@@ -11,4 +11,4 @@ pub use layout::NodeExt;
 pub use scope::{is_in_scope, UiInputScope};
 pub use style::ButtonStyle;
 pub(crate) use theme::resolve_ui_theme;
-pub use theme::{TextRole, UiTextExt, UiTheme, UiThemedText};
+pub use theme::{TextPreset, TextRole, UiTextExt, UiTheme, UiThemedText};

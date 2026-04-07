@@ -42,7 +42,7 @@ pub(crate) use scroll_view::{
     clamp_scroll_bounds, handle_scroll_input, handle_scrollbar_drag, handle_track_click,
     has_scroll_views, update_scrollbar_thumb,
 };
-pub(crate) use modal::{handle_dismiss_event, handle_modal_dismiss, process_modal_queue};
+pub(crate) use modal::{handle_dismiss_event, handle_modal_dismiss, process_modal_queue, reveal_modal_panel};
 pub use dialogue::{
     DialogueBox, DialogueConfig, DialogueContent, DialoguePosition, DialogueQueue,
     DialogueRequest, DialogueScroll, DialogueStyle, DialogueTopicButton, DialogueTopicPanel,
@@ -50,14 +50,14 @@ pub use dialogue::{
     append_dialogue_text, has_dialogue,
 };
 pub(crate) use dialogue::{
-    handle_dialogue_dismiss_event, handle_dialogue_dismiss_input, handle_dialogue_topic,
+    handle_dialogue_dismiss_event, handle_dialogue_dismiss_input,
     handle_topic_panel_clicks, process_dialogue_queue, topic_button_hover, update_topic_panel,
 };
 pub use hypertext::{
     HyperLinkClicked, HyperLinkSpan, HyperText, HyperTextConfig, HyperTextHoverState,
-    SpawnHyperTextExt,
+    SpawnHyperTextExt, TopicContainer, append_topic_block,
 };
-pub(crate) use hypertext::{apply_initial_visited_colors, has_hypertext, hypertext_click, hypertext_hover, update_visited_link_colors};
+pub(crate) use hypertext::{apply_initial_visited_colors, handle_topic_container, has_hypertext, hypertext_click, hypertext_hover, update_visited_link_colors};
 #[cfg(feature = "viewport3d")]
 pub use viewport3d::{
     Viewport3d, Viewport3dCamera, Viewport3dConfig, Viewport3dDragState, Viewport3dHandle,
