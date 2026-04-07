@@ -4,6 +4,10 @@ Action-driven UI toolkit for [Bevy](https://bevyengine.org/).
 
 Instead of matching `Interaction` changes in every system, define **action structs** that execute with full `World` access — then attach them to UI elements as components.
 
+**[Live Demo](https://nazgull08.github.io/bevy_ui_actions/)** — try all widgets in your browser (WASM, ~20 MB per example)
+
+![Character Sheet showcase](character_sheet_screenshot.jpg)
+
 ## Features
 
 ### Core
