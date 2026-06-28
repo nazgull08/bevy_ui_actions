@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use std::sync::Arc;
 
-use crate::core::{TextRole, UiAction, UiInputScope, UiTextExt};
+use crate::core::{TextRole, UiAction, UiInputScope, UiTextExt, ZLayer};
 use crate::interactions::OnClick;
 use crate::widgets::visual::InteractiveVisual;
 
@@ -196,8 +196,16 @@ impl UiAction for DismissModal {
 /// Spawn a styled button inside a modal panel.
 ///
 /// Use with `DismissModal` action to close the modal:
-/// ```ignore
-/// spawn_modal_button(row, "OK", style.confirm_color, style.button_padding_x, style.button_padding_y, DismissModal(true));
+/// ```rust
+/// # use bevy::prelude::*;
+/// # use bevy_ui_actions::prelude::*;
+/// fn build_buttons(mut commands: Commands) {
+///     let style = ModalStyle::default();
+///     commands.spawn(Node::default()).with_children(|row| {
+///         spawn_modal_button(row, "OK", style.confirm_color,
+///             style.button_padding_x, style.button_padding_y, DismissModal(true));
+///     });
+/// }
 /// ```
 pub fn spawn_modal_button(
     parent: &mut ChildSpawnerCommands,
@@ -276,7 +284,7 @@ fn spawn_modal(commands: &mut Commands, style: &ModalStyle, request: ModalReques
                 ..default()
             },
             BackgroundColor(style.backdrop_color),
-            GlobalZIndex(900),
+            GlobalZIndex(ZLayer::Modal.z()),
             Interaction::None,
         ))
         .with_children(|backdrop| {

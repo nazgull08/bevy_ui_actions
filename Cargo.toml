@@ -1,6 +1,6 @@
 [package]
 name = "bevy_ui_actions"
-version = "0.2.3"
+version = "0.2.4"
 edition = "2021"
 license = "MIT"
 description = "Action-driven UI toolkit for Bevy — clicks, drag-drop, tooltips, tabs, scroll views, modals, dialogue system, 3D viewports"
@@ -47,6 +47,14 @@ path = "examples/drag_drop.rs"
 [[example]]
 name = "inventory_demo"
 path = "examples/inventory_demo.rs"
+
+[[example]]
+name = "window_manager"
+path = "examples/window_manager.rs"
+
+[[example]]
+name = "container_transfer"
+path = "examples/container_transfer.rs"
 
 [[example]]
 name = "progress_bar"

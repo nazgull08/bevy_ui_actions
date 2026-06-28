@@ -127,16 +127,17 @@ fn parse_hypertext(input: &str) -> Vec<ParsedSegment> {
 
     while !remaining.is_empty() {
         if let Some(bracket_start) = remaining.find('[') {
-            // Plain text before the bracket
-            if bracket_start > 0 {
-                segments.push(ParsedSegment {
-                    text: remaining[..bracket_start].to_string(),
-                    link_topic: None,
-                });
-            }
-
-            // Find closing bracket
+            // Find closing bracket BEFORE emitting the prefix — an unclosed
+            // bracket must keep the whole remainder as one plain segment.
             if let Some(bracket_end) = remaining[bracket_start..].find(']') {
+                // Plain text before the bracket
+                if bracket_start > 0 {
+                    segments.push(ParsedSegment {
+                        text: remaining[..bracket_start].to_string(),
+                        link_topic: None,
+                    });
+                }
+
                 let bracket_end = bracket_start + bracket_end;
                 let inner = &remaining[bracket_start + 1..bracket_end];
 

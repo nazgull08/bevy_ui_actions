@@ -8,6 +8,9 @@
 //!
 //! Run: `cargo run --example progress_bar -p bevy_ui_actions`
 
+// Bevy `Query` filter tuples are inherently verbose; this lint fights ECS.
+#![allow(clippy::type_complexity)]
+
 use bevy::prelude::*;
 use bevy_ui_actions::prelude::*;
 
@@ -225,19 +228,19 @@ fn sync_bars(
         return;
     }
 
-    if let Ok(mut bar) = hp_query.get_single_mut() {
+    if let Ok(mut bar) = hp_query.single_mut() {
         bar.set(stats.health / stats.health_max);
     }
-    if let Ok(mut bar) = mp_query.get_single_mut() {
+    if let Ok(mut bar) = mp_query.single_mut() {
         bar.set(stats.mana / stats.mana_max);
     }
-    if let Ok(mut bar) = sp_query.get_single_mut() {
+    if let Ok(mut bar) = sp_query.single_mut() {
         bar.set(stats.stamina / stats.stamina_max);
     }
-    if let Ok(mut bar) = str_query.get_single_mut() {
+    if let Ok(mut bar) = str_query.single_mut() {
         bar.set(stats.strength as f32 / 30.0);
     }
-    if let Ok(mut text) = text_query.get_single_mut() {
+    if let Ok(mut text) = text_query.single_mut() {
         **text = format!(
             "HP: {:.0}/{:.0}  MP: {:.0}/{:.0}  SP: {:.0}/{:.0}  STR: {}/30",
             stats.health,

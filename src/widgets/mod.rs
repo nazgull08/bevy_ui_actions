@@ -5,11 +5,25 @@ mod modal;
 mod panel;
 mod progress_bar;
 mod scroll_view;
+mod slot;
 mod tabs;
 mod tooltip;
 #[cfg(feature = "viewport3d")]
 mod viewport3d;
 mod visual;
+mod window;
+
+pub use slot::{dragged_slot, Slot, SlotGridConfig, SpawnSlotGridExt};
+
+pub use window::{
+    SpawnWindowExt, UiWindow, WindowCloseButton, WindowClosable, WindowConfig, WindowContent,
+    WindowDrag, WindowDragState, WindowFocused, WindowManager, WindowMovable, WindowTitleBar,
+    WINDOW_Z_BASE,
+};
+pub(crate) use window::{
+    apply_window_z, cleanup_windows, register_windows, window_close_on_escape, window_close_system,
+    window_focus_system, window_move_system,
+};
 
 pub use progress_bar::{ProgressBar, ProgressBarConfig, ProgressBarFill, SpawnProgressBarExt};
 pub use tabs::{Tab, TabContent, TabGroup};

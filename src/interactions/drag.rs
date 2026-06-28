@@ -1,4 +1,4 @@
-use crate::core::{is_in_scope, UiAction, UiInputScope};
+use crate::core::{is_in_scope, UiAction, UiInputScope, ZLayer};
 use crate::widgets::Disabled;
 use bevy::prelude::*;
 use bevy::ui::FocusPolicy;
@@ -364,7 +364,7 @@ fn spawn_ghost(
                     image: handle,
                     ..default()
                 },
-                GlobalZIndex(999),
+                GlobalZIndex(ZLayer::DragGhost.z()),
                 FocusPolicy::Pass,
             ))
             .id(),
@@ -373,7 +373,7 @@ fn spawn_ghost(
                 DragGhost,
                 base_node,
                 BackgroundColor(color),
-                GlobalZIndex(999),
+                GlobalZIndex(ZLayer::DragGhost.z()),
                 FocusPolicy::Pass,
             ))
             .id(),

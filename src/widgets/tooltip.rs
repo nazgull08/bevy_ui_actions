@@ -4,12 +4,14 @@
 //!
 //! Simple text tooltip (backwards compatible):
 //! ```rust
-//! Tooltip::new("Click to activate")
+//! # use bevy_ui_actions::prelude::*;
+//! let _tip = Tooltip::new("Click to activate");
 //! ```
 //!
 //! Rich tooltip with builder:
 //! ```rust
-//! Tooltip::builder()
+//! # use bevy_ui_actions::prelude::*;
+//! let _tip = Tooltip::builder()
 //!     .title("Iron Sword")
 //!     .subtitle("Weapon • Main Hand")
 //!     .separator()
@@ -17,11 +19,12 @@
 //!     .stat_diff("Speed", "1.2x", StatDiff::Better(0.2))
 //!     .separator()
 //!     .text("A reliable iron sword.")
-//!     .build()
+//!     .build();
 //! ```
 
 use bevy::prelude::*;
 
+use crate::core::ZLayer;
 use crate::DragState;
 
 // ============================================================
@@ -546,7 +549,7 @@ fn spawn_tooltip_ui(
             },
             BackgroundColor(style.background),
             BorderColor(style.border_color),
-            GlobalZIndex(500),
+            GlobalZIndex(ZLayer::Tooltip.z()),
         ))
         .with_children(|parent| {
             spawn_tooltip_content(parent, content, style);

@@ -5,6 +5,11 @@
 //!
 //! Run: `cargo run --example character_sheet -p bevy_ui_actions --features viewport3d`
 
+// Bevy systems naturally have many params and complex `Query` types; these
+// lints fight ECS, so we silence them example-wide (Bevy itself disables them).
+#![allow(clippy::type_complexity)]
+#![allow(clippy::too_many_arguments)]
+
 mod data;
 mod equipment_tab;
 mod lore_tab;

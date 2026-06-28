@@ -5,6 +5,7 @@ use bevy::prelude::*;
 /// # Example
 ///
 /// ```rust
+/// # use bevy::prelude::*;
 /// use bevy_ui_actions::prelude::*;
 ///
 /// let preset = TextPreset::new(18.0, Color::WHITE);
@@ -32,6 +33,8 @@ impl TextPreset {
 /// # Example
 ///
 /// ```rust
+/// # use bevy::prelude::*;
+/// # use bevy_ui_actions::prelude::*;
 /// fn setup(mut theme: ResMut<UiTheme>, asset_server: Res<AssetServer>) {
 ///     theme.font = asset_server.load("fonts/my_font.ttf");
 ///     // Bump all sizes by 2px
@@ -194,10 +197,12 @@ impl TextRole {
 /// # Example
 ///
 /// ```rust
+/// # use bevy::prelude::*;
+/// # use bevy_ui_actions::prelude::*;
 /// fn setup(mut commands: Commands) {
 ///     commands.spawn(Node::default()).with_children(|parent| {
 ///         parent.ui_text(TextRole::Heading, "Equipment");
-///         parent.ui_text_styled("custom", 22.0, Color::RED);
+///         parent.ui_text_styled("custom", 22.0, Color::srgb(1.0, 0.0, 0.0));
 ///     });
 /// }
 /// ```

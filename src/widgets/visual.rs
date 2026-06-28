@@ -14,18 +14,22 @@
 //! # Example
 //!
 //! ```rust
-//! // Slot with both background and border feedback
-//! commands.spawn((
-//!     Node { ... },
-//!     BackgroundColor(Color::srgb(0.2, 0.2, 0.2)),
-//!     BorderColor(Color::srgb(0.4, 0.4, 0.4)),
-//!     InteractiveVisual,
-//!     BorderStyle::slot(),
-//!     Interaction::None,
-//! ));
+//! # use bevy::prelude::*;
+//! # use bevy_ui_actions::prelude::*;
+//! fn setup(mut commands: Commands) {
+//!     // Slot with both background and border feedback
+//!     let slot = commands.spawn((
+//!         Node::default(),
+//!         BackgroundColor(Color::srgb(0.2, 0.2, 0.2)),
+//!         BorderColor(Color::srgb(0.4, 0.4, 0.4)),
+//!         InteractiveVisual,
+//!         BorderStyle::slot(),
+//!         Interaction::None,
+//!     )).id();
 //!
-//! // Mark as selected
-//! commands.entity(slot).insert(Selected);
+//!     // Mark as selected
+//!     commands.entity(slot).insert(Selected);
+//! }
 //! ```
 
 use crate::core::{is_in_scope, ButtonStyle, UiInputScope};

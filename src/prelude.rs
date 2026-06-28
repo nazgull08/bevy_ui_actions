@@ -1,6 +1,6 @@
 pub use crate::core::{
     ButtonConfig, ButtonStyle, NodeExt, SpawnActionButton, SpawnUiExt, TextPreset, TextRole,
-    UiAction, UiInputScope, UiTextExt, UiTheme, UiThemedText,
+    UiAction, UiInputScope, UiTextExt, UiTheme, UiThemedText, ZLayer,
 };
 
 pub use crate::interactions::{
@@ -22,6 +22,10 @@ pub use crate::widgets::{
     TooltipBuilder, TooltipContent, TooltipSection, TooltipSet, TooltipState, TooltipStyle,
     TopicDiscovered, TopicEntry, TopicRegistry, VisualStyle, append_dialogue_text,
     spawn_modal_button,
+    SpawnWindowExt, UiWindow, WindowCloseButton, WindowClosable, WindowConfig, WindowContent,
+    WindowDrag, WindowDragState, WindowFocused, WindowManager, WindowMovable, WindowTitleBar,
+    WINDOW_Z_BASE,
+    dragged_slot, Slot, SlotGridConfig, SpawnSlotGridExt,
 };
 
 pub use crate::UiActionsPlugin;

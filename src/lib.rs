@@ -48,7 +48,7 @@
 //! fn setup(mut commands: Commands) {
 //!     commands.spawn(Camera2d);
 //!     commands.spawn(Node::default()).with_children(|root| {
-//!         root.spawn_button("Click me", MyAction);
+//!         root.spawn_button(MyAction, "Click me");
 //!     });
 //! }
 //! ```
@@ -72,7 +72,7 @@ pub use plugin::UiActionsPlugin;
 // Re-export core
 pub use core::{
     ButtonConfig, ButtonStyle, NodeExt, SpawnActionButton, SpawnUiExt, TextPreset, TextRole,
-    UiAction, UiInputScope, UiTextExt, UiTheme, UiThemedText,
+    UiAction, UiInputScope, UiTextExt, UiTheme, UiThemedText, ZLayer,
 };
 
 // Re-export interactions
@@ -95,6 +95,10 @@ pub use widgets::{
     TooltipBuilder, TooltipContent, TooltipSection, TooltipSet, TooltipState, TooltipStyle,
     TooltipUI, TopicContainer, TopicDiscovered, TopicEntry, TopicRegistry, VisualStyle,
     append_dialogue_text, append_topic_block, spawn_modal_button,
+    SpawnWindowExt, UiWindow, WindowCloseButton, WindowClosable, WindowConfig, WindowContent,
+    WindowDrag, WindowDragState, WindowFocused, WindowManager, WindowMovable, WindowTitleBar,
+    WINDOW_Z_BASE,
+    dragged_slot, Slot, SlotGridConfig, SpawnSlotGridExt,
 };
 
 #[cfg(feature = "viewport3d")]

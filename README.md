@@ -6,7 +6,7 @@ Instead of matching `Interaction` changes in every system, define **action struc
 
 **[Live Demo](https://nazgull08.github.io/bevy_ui_actions/)** — try all widgets in your browser (WASM, ~20 MB per example)
 
-![Character Sheet showcase](character_sheet_screenshot.jpg)
+![Character Sheet showcase](https://raw.githubusercontent.com/nazgull08/bevy_ui_actions/main/character_sheet_screenshot.jpg)
 
 ## Features
 
@@ -24,6 +24,8 @@ Instead of matching `Interaction` changes in every system, define **action struc
 - **Panels** — styled containers with presets (`dark`, `overlay`, `sidebar`)
 - **Scroll views** — scrollable containers with scrollbar (thumb drag + track click)
 - **List views** — selectable item lists (`None` / `Single` selection)
+- **Floating windows** — `spawn_window` movable/closable windows; title-bar drag, click-to-front z-order, `Escape` to close, on-screen clamp
+- **Slot grids** — `spawn_slot_grid` + `Slot { container, index }` + `dragged_slot`; container-agnostic drag&drop slots (inventories, chests)
 - **Modals** — `ModalQueue` + backdrop + ESC dismiss + focus trap
 - **HyperText** — inline clickable `[links|key]` with glyph-level hit-testing
 - **Dialogue** — Morrowind-style dialogue box with TopicRegistry + topic panel + visited links
@@ -103,6 +105,28 @@ queue.show(
 );
 ```
 
+## Floating windows
+
+```rust
+// Spawn a movable, focusable, closable window. `content` fills the body.
+commands.spawn_window(
+    WindowConfig::new("Inventory", Vec2::new(100.0, 80.0))
+        .with_size(Val::Px(280.0), Val::Px(220.0)),
+    |c| {
+        c.ui_text(TextRole::Body, "Drag me by the title bar.");
+    },
+);
+
+// A non-closable window: no close button, ignored by Escape.
+commands.spawn_window(
+    WindowConfig::new("Stats", Vec2::new(260.0, 170.0)).closable(false),
+    |c| { c.ui_text(TextRole::Body, "STR 10"); },
+);
+```
+
+Windows are modeless (all open windows stay interactive); clicking one raises it
+via `GlobalZIndex`. Their z-band sits below the other overlays — see [`ZLayer`].
+
 ## Viewport3d (feature `viewport3d`)
 
 ```rust
@@ -139,6 +163,8 @@ cargo run --example selection        # Grid selection with BorderStyle
 cargo run --example tabs             # Tab switching
 cargo run --example scroll_view      # Scrollable content
 cargo run --example modal            # Modal dialogs
+cargo run --example window_manager   # Floating windows: drag, focus, close
+cargo run --example container_transfer # Two inventory windows + drag&drop slots
 cargo run --example hypertext        # Clickable inline links
 cargo run --example dialogue         # Morrowind-style dialogue + topics
 cargo run --example viewport3d --features viewport3d  # 3D preview

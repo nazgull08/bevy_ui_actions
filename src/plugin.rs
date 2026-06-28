@@ -16,7 +16,9 @@ use crate::widgets::{
     ModalStyle, ScrollbarDragState, TopicDiscovered, TooltipSet, TooltipState, TooltipStyle,
     sync_active_tab_marker, sync_tab_content_visibility, update_border_visuals,
     update_interactive_visuals, update_progress_bars, update_scrollbar_thumb,
-    update_tooltip_hover, update_visited_link_colors,
+    update_tooltip_hover, update_visited_link_colors, apply_window_z, cleanup_windows,
+    register_windows, window_close_on_escape, window_close_system, window_focus_system,
+    window_move_system, WindowDragState, WindowManager,
 };
 #[cfg(feature = "viewport3d")]
 use crate::widgets::{
@@ -38,6 +40,8 @@ impl Plugin for UiActionsPlugin {
             .init_resource::<ScrollbarDragState>()
             .init_resource::<ModalStyle>()
             .init_resource::<ModalQueue>()
+            .init_resource::<WindowDragState>()
+            .init_resource::<WindowManager>()
             .init_resource::<DialogueQueue>()
             .init_resource::<DialogueStyle>()
             .add_event::<ListItemSelected>()
@@ -106,6 +110,18 @@ impl Plugin for UiActionsPlugin {
                         handle_modal_dismiss,
                         handle_dismiss_event.after(handle_modal_dismiss),
                     ),
+                    // Windows: register → cleanup → focus/move → apply z (order matters).
+                    // Close systems run after; despawn is command-deferred.
+                    (
+                        register_windows,
+                        cleanup_windows,
+                        window_focus_system,
+                        window_move_system,
+                        apply_window_z,
+                        window_close_system,
+                        window_close_on_escape,
+                    )
+                        .chain(),
                     // Hypertext + topic container
                     (
                         hypertext_click,

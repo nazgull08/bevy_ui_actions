@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::core::{TextRole, UiAction, UiInputScope, UiTextExt};
+use crate::core::{TextRole, UiAction, UiInputScope, UiTextExt, ZLayer};
 use crate::widgets::hypertext::{HyperLinkClicked, HyperTextConfig, SpawnHyperTextExt, TopicContainer};
 use crate::widgets::panel::{PanelConfig, SpawnPanelExt};
 use crate::widgets::scroll_view::ScrollView;
@@ -566,7 +566,7 @@ fn spawn_dialogue(
                 flex_direction: FlexDirection::Column,
                 ..default()
             },
-            GlobalZIndex(800),
+            GlobalZIndex(ZLayer::Dialogue.z()),
         ))
         .with_children(|overlay| {
             // Panel with overflow hidden so scroll stays within bounds
@@ -810,7 +810,9 @@ fn spawn_dialogue(
 /// Use this from game code when handling `HyperLinkClicked` events
 /// to add topic responses to the conversation.
 ///
-/// ```ignore
+/// ```rust
+/// # use bevy::prelude::*;
+/// # use bevy_ui_actions::prelude::*;
 /// fn handle_topic(
 ///     mut events: EventReader<HyperLinkClicked>,
 ///     mut commands: Commands,
@@ -819,10 +821,11 @@ fn spawn_dialogue(
 ///     dialogue: Query<&DialogueBox>,
 /// ) {
 ///     for event in events.read() {
-///         let response = my_topic_lookup(&event.topic);
+///         let response = format!("Information about {}.", event.topic);
 ///         let content_entity = content.single().unwrap();
 ///         let mut scroll_pos = scroll.single_mut().unwrap();
-///         append_dialogue_text(&mut commands, content_entity, &mut scroll_pos, &dialogue.config, &event.topic, &response);
+///         let config = &dialogue.single().unwrap().config;
+///         append_dialogue_text(&mut commands, content_entity, &mut scroll_pos, config, &event.topic, &response);
 ///     }
 /// }
 /// ```

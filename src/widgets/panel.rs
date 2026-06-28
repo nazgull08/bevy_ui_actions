@@ -8,9 +8,15 @@ use bevy::prelude::*;
 /// # Example
 ///
 /// ```rust
-/// parent.spawn_panel(PanelConfig::dark()).with_children(|panel| {
-///     panel.ui_text(TextRole::Heading, "Title");
-/// });
+/// # use bevy::prelude::*;
+/// # use bevy_ui_actions::prelude::*;
+/// fn setup(mut commands: Commands) {
+///     commands.spawn(Node::default()).with_children(|parent| {
+///         parent.spawn_panel(PanelConfig::dark()).with_children(|panel| {
+///             panel.ui_text(TextRole::Heading, "Title");
+///         });
+///     });
+/// }
 /// ```
 #[derive(Clone, Debug)]
 pub struct PanelConfig {
