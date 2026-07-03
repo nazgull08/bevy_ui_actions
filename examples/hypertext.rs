@@ -32,6 +32,7 @@ fn setup(mut commands: Commands) {
         link_color: Color::srgb(0.4, 0.6, 0.9),
         link_hover_color: Color::srgb(0.6, 0.8, 1.0),
         visited_link_color: None,
+        disabled_link_color: Color::srgb(0.4, 0.4, 0.45),
         width: Val::Px(700.0),
         font_size: Some(BODY_SIZE),
     };

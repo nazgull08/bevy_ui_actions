@@ -474,12 +474,47 @@ fn cursor_in_node(cursor: Vec2, transform: &GlobalTransform, computed: &Computed
         && cursor.y <= node_pos.y + half.y
 }
 
+/// Latch that pins a [`ScrollView`] to its bottom for a few frames.
+///
+/// Appending content grows the scroll body, but the new child's layout is not
+/// computed until a later frame — so a one-shot `offset_y = f32::MAX` gets clamped
+/// to the *old* content height and the view never reaches the new bottom. This
+/// latch makes [`clamp_scroll_bounds`] re-pin to the freshly-measured bottom every
+/// frame until layout settles, then removes itself.
+///
+/// Insert it on the scroll-view entity after appending content (see
+/// `handle_topic_container`). It auto-expires, so it never locks manual scrolling.
+#[derive(Component, Debug, Clone, Copy)]
+pub struct StickToBottom {
+    /// Frames left to keep pinning (covers multi-frame layout settling).
+    pub frames: u8,
+}
+
+impl Default for StickToBottom {
+    fn default() -> Self {
+        Self { frames: 3 }
+    }
+}
+
 /// Clamps scroll position to valid bounds (0..max_scroll).
+///
+/// While a [`StickToBottom`] latch is present, `offset_y` is pinned to the
+/// freshly-measured bottom instead (following appended content across the frames
+/// it takes for layout to settle), then the latch is removed.
+#[allow(clippy::type_complexity)]
 pub(crate) fn clamp_scroll_bounds(
-    mut query: Query<(&ScrollView, &mut ScrollPosition, &ComputedNode, &Children)>,
+    mut commands: Commands,
+    mut query: Query<(
+        Entity,
+        &ScrollView,
+        &mut ScrollPosition,
+        &ComputedNode,
+        &Children,
+        Option<&mut StickToBottom>,
+    )>,
     child_nodes: Query<&ComputedNode, Without<ScrollView>>,
 ) {
-    for (scroll_view, mut scroll_pos, viewport_node, children) in &mut query {
+    for (entity, scroll_view, mut scroll_pos, viewport_node, children, stick) in &mut query {
         let viewport_size = viewport_node.size();
 
         // Skip clamping when node is hidden (Display::None → size is 0)
@@ -515,7 +550,18 @@ pub(crate) fn clamp_scroll_bounds(
         let max_scroll_y = (content_height - viewport_size.y).max(0.0);
 
         scroll_pos.offset_x = scroll_pos.offset_x.clamp(0.0, max_scroll_x);
-        scroll_pos.offset_y = scroll_pos.offset_y.clamp(0.0, max_scroll_y);
+
+        if let Some(mut stick) = stick {
+            // Follow the tail while appended content settles into layout.
+            scroll_pos.offset_y = max_scroll_y;
+            if stick.frames <= 1 {
+                commands.entity(entity).remove::<StickToBottom>();
+            } else {
+                stick.frames -= 1;
+            }
+        } else {
+            scroll_pos.offset_y = scroll_pos.offset_y.clamp(0.0, max_scroll_y);
+        }
     }
 }
 

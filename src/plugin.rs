@@ -4,15 +4,18 @@ use crate::interactions::{
     handle_press_actions, handle_right_clicks, has_draggables, DragGhostStyle, DragState,
 };
 use crate::widgets::{
-    clamp_scroll_bounds, handle_dialogue_dismiss_event, handle_dialogue_dismiss_input,
+    apply_append_text, apply_set_choices, update_choice_button_visuals, clamp_scroll_bounds, handle_choice_clicks, handle_choice_hotkeys, handle_dialogue_dismiss_event,
+    handle_dialogue_dismiss_input,
     handle_dismiss_event, handle_modal_dismiss, reveal_modal_panel, handle_scroll_input,
-    handle_scrollbar_drag, handle_tab_clicks, handle_topic_panel_clicks, handle_track_click, topic_button_hover,
+    handle_scrollbar_drag, handle_tab_clicks, handle_topic_panel_clicks, handle_track_click,
+    track_active_topic, update_topic_button_colors, ActiveTopic, DialogueTopicsLocked,
     apply_initial_visited_colors, has_dialogue, has_hypertext, has_scroll_views, hide_tooltip,
-    hypertext_click, hypertext_hover, handle_topic_container,
+    hypertext_click, hypertext_hover, handle_topic_container, apply_topic_lock_dimming,
     process_dialogue_queue, process_modal_queue,
     should_hide_tooltip,
     should_show_tooltip, show_tooltip, update_topic_panel, DialogueQueue, DialogueStyle,
-    DismissDialogueEvent, DismissModalEvent, HyperLinkClicked, ListItemSelected, ModalQueue,
+    DialogueChoiceSelected, SetDialogueChoices, AppendDialogueText, DismissDialogueEvent, DismissModalEvent, HyperLinkClicked,
+    ListItemSelected, ModalQueue,
     ModalStyle, ScrollbarDragState, TopicDiscovered, TooltipSet, TooltipState, TooltipStyle,
     sync_active_tab_marker, sync_tab_content_visibility, update_border_visuals,
     update_interactive_visuals, update_progress_bars, update_scrollbar_thumb,
@@ -44,9 +47,14 @@ impl Plugin for UiActionsPlugin {
             .init_resource::<WindowManager>()
             .init_resource::<DialogueQueue>()
             .init_resource::<DialogueStyle>()
+            .init_resource::<ActiveTopic>()
+            .init_resource::<DialogueTopicsLocked>()
             .add_event::<ListItemSelected>()
             .add_event::<DismissModalEvent>()
             .add_event::<DismissDialogueEvent>()
+            .add_event::<DialogueChoiceSelected>()
+            .add_event::<SetDialogueChoices>()
+            .add_event::<AppendDialogueText>()
             .add_event::<HyperLinkClicked>()
             .add_event::<TopicDiscovered>()
             // Configure tooltip system ordering
@@ -129,6 +137,7 @@ impl Plugin for UiActionsPlugin {
                         apply_initial_visited_colors,
                         handle_topic_container.after(hypertext_click),
                         update_visited_link_colors.after(handle_topic_container),
+                        apply_topic_lock_dimming.after(handle_topic_container),
                     )
                         .run_if(has_hypertext),
                     // Dialogue
@@ -138,7 +147,13 @@ impl Plugin for UiActionsPlugin {
                             handle_dialogue_dismiss_input,
                             handle_dialogue_dismiss_event.after(handle_dialogue_dismiss_input),
                             handle_topic_panel_clicks,
-                            topic_button_hover,
+                            track_active_topic.after(handle_topic_panel_clicks),
+                            update_topic_button_colors.after(track_active_topic),
+                            handle_choice_clicks,
+                            handle_choice_hotkeys,
+                            apply_set_choices,
+                            apply_append_text,
+                            update_choice_button_visuals.after(apply_set_choices),
                             update_topic_panel.after(handle_topic_container),
                         )
                             .run_if(has_dialogue),

@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use bevy::text::TextLayoutInfo;
 
 use crate::core::{TextRole, UiTextExt, UiThemedText};
+use crate::widgets::scroll_view::{ScrollView, StickToBottom};
 
 // ============================================================
 // Config
@@ -18,6 +19,10 @@ pub struct HyperTextConfig {
     pub link_hover_color: Color,
     /// Color for visited (discovered) links. If `None`, uses `link_color`.
     pub visited_link_color: Option<Color>,
+    /// Color for links while topic navigation is suspended
+    /// ([`DialogueTopicsLocked`](crate::widgets::dialogue::DialogueTopicsLocked)) —
+    /// links read as unavailable and stop reacting to hover.
+    pub disabled_link_color: Color,
     /// Container width.
     pub width: Val,
     /// Override font size. If `None`, uses `text_role.size()`.
@@ -31,6 +36,7 @@ impl Default for HyperTextConfig {
             link_color: Color::srgb(0.4, 0.6, 0.9),
             link_hover_color: Color::srgb(0.6, 0.8, 1.0),
             visited_link_color: Some(Color::srgb(0.5, 0.4, 0.7)),
+            disabled_link_color: Color::srgb(0.4, 0.4, 0.45),
             width: Val::Percent(100.0),
             font_size: None,
         }
@@ -55,6 +61,8 @@ pub struct HyperText {
     pub link_hover_color: Color,
     /// Color for visited (discovered) links. If `None`, uses `link_color`.
     pub visited_link_color: Option<Color>,
+    /// Color applied to links while topic navigation is locked.
+    pub disabled_link_color: Color,
     /// Font size used at spawn time, needed for hit-test line height.
     pub font_size: f32,
 }
@@ -252,6 +260,7 @@ impl SpawnHyperTextExt for ChildSpawnerCommands<'_> {
             link_color,
             link_hover_color: config.link_hover_color,
             visited_link_color: config.visited_link_color,
+            disabled_link_color: config.disabled_link_color,
             font_size,
         };
 
@@ -339,7 +348,13 @@ pub(crate) fn hypertext_hover(
     )>,
     mut span_colors: Query<&mut TextColor>,
     registry: Option<Res<crate::widgets::dialogue::TopicRegistry>>,
+    locked: Option<Res<crate::widgets::dialogue::DialogueTopicsLocked>>,
 ) {
+    // Links inert while topics are locked — no hover highlight. `apply_topic_lock_dimming`
+    // owns their (dimmed) color for the duration.
+    if locked.is_some_and(|l| l.0) {
+        return;
+    }
     let cursor = windows.single().ok().and_then(|w| w.cursor_position());
 
     for (hyper, layout, transform, computed, mut hover_state, children) in &mut query {
@@ -431,14 +446,31 @@ pub(crate) fn apply_initial_visited_colors(
     query: Query<(&HyperText, &HyperTextHoverState, &Children), Added<HyperText>>,
     mut span_colors: Query<&mut TextColor>,
     registry: Option<Res<crate::widgets::dialogue::TopicRegistry>>,
+    locked: Option<Res<crate::widgets::dialogue::DialogueTopicsLocked>>,
 ) {
-    let Some(registry) = registry else { return };
+    let is_locked = locked.is_some_and(|l| l.0);
 
     for (hyper, hover_state, children) in &query {
+        // A block appended while topics are locked starts with its links dimmed
+        // (they'll restore to visited/normal on unlock via `apply_topic_lock_dimming`).
+        if is_locked {
+            for link in &hyper.link_spans {
+                set_span_color(
+                    link.span_index,
+                    hyper.disabled_link_color,
+                    children,
+                    &mut span_colors,
+                );
+            }
+            continue;
+        }
+
         let Some(visited_color) = hyper.visited_link_color else {
             continue;
         };
-
+        let Some(registry) = registry.as_deref() else {
+            continue;
+        };
         for link in &hyper.link_spans {
             if !registry.is_discovered(&link.topic) {
                 continue;
@@ -447,6 +479,34 @@ pub(crate) fn apply_initial_visited_colors(
                 continue;
             }
             set_span_color(link.span_index, visited_color, children, &mut span_colors);
+        }
+    }
+}
+
+/// Recolors every hypertext link when topic navigation locks/unlocks: dimmed while
+/// locked, restored to visited/default on unlock. Runs only on a lock-state change.
+/// Newly-appended blocks are handled by [`apply_initial_visited_colors`].
+pub(crate) fn apply_topic_lock_dimming(
+    locked: Res<crate::widgets::dialogue::DialogueTopicsLocked>,
+    mut query: Query<(&HyperText, &mut HyperTextHoverState, &Children)>,
+    mut span_colors: Query<&mut TextColor>,
+    registry: Option<Res<crate::widgets::dialogue::TopicRegistry>>,
+) {
+    if !locked.is_changed() {
+        return;
+    }
+    for (hyper, mut hover_state, children) in &mut query {
+        for link in &hyper.link_spans {
+            let color = if locked.0 {
+                hyper.disabled_link_color
+            } else {
+                resolve_link_color(hyper, &link.topic, registry.as_deref())
+            };
+            set_span_color(link.span_index, color, children, &mut span_colors);
+        }
+        // Cancel any in-progress hover so unlock restores from a clean state.
+        if locked.0 {
+            hover_state.hovered_span = None;
         }
     }
 }
@@ -460,15 +520,16 @@ pub fn has_hypertext(query: Query<(), With<HyperText>>) -> bool {
 // TopicContainer system + helper
 // ============================================================
 
-/// Append a topic block (header + hypertext body) to a container entity.
+/// Append a topic block (optional header + hypertext body) to a container entity.
 ///
-/// This is the generic equivalent of [`append_dialogue_text`](crate::widgets::dialogue::append_dialogue_text)
-/// but works with any [`TopicContainer`], not just dialogue boxes.
+/// The low-level building block behind topic auto-append and the
+/// [`AppendDialogueText`](crate::widgets::dialogue::AppendDialogueText) event;
+/// works with any [`TopicContainer`], not just dialogue boxes.
 pub fn append_topic_block(
     commands: &mut Commands,
     container_entity: Entity,
     config: &TopicContainer,
-    header: &str,
+    header: Option<&str>,
     text: &str,
 ) {
     commands.entity(container_entity).with_children(|content| {
@@ -481,7 +542,9 @@ pub fn append_topic_block(
                 ..default()
             })
             .with_children(|block| {
-                block.ui_text(config.header_role, header);
+                if let Some(header) = header {
+                    block.ui_text(config.header_role, header);
+                }
                 block.spawn_hypertext(&config.hypertext_config, text);
             });
     });
@@ -495,15 +558,24 @@ pub fn append_topic_block(
 ///
 /// Without a [`TopicRegistry`] resource this system is a no-op — events pass
 /// through for game code to handle via its own `EventReader<HyperLinkClicked>`.
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn handle_topic_container(
     mut link_events: EventReader<HyperLinkClicked>,
     container_query: Query<(Entity, &TopicContainer)>,
     parent_query: Query<&ChildOf>,
-    mut scroll_query: Query<&mut ScrollPosition>,
+    scroll_query: Query<(), With<ScrollView>>,
     mut commands: Commands,
     registry: Option<ResMut<crate::widgets::dialogue::TopicRegistry>>,
+    locked: Option<Res<crate::widgets::dialogue::DialogueTopicsLocked>>,
     mut discovered_events: EventWriter<crate::widgets::dialogue::TopicDiscovered>,
 ) {
+    // Topics suspended while a decision is pending — drop link events without
+    // appending (mirrors the topic-panel lock). Events are still consumed so they
+    // don't leak into a later unlocked frame.
+    if locked.is_some_and(|l| l.0) {
+        link_events.clear();
+        return;
+    }
     let Some(mut registry) = registry else {
         return;
     };
@@ -543,15 +615,18 @@ pub(crate) fn handle_topic_container(
             &mut commands,
             container_entity,
             &tc,
-            &entry.title,
+            Some(&entry.title),
             &entry.text,
         );
 
-        // Auto-scroll: walk up from container to find ScrollPosition
+        // Auto-scroll: walk up from the container to the enclosing ScrollView and
+        // pin it to the (new) bottom until the appended block's layout settles.
+        // A one-shot `offset_y = MAX` would be clamped to the *old* content height;
+        // the StickToBottom latch re-pins each frame until stable. See its docs.
         let mut walk = container_entity;
         loop {
-            if let Ok(mut scroll_pos) = scroll_query.get_mut(walk) {
-                scroll_pos.offset_y = f32::MAX;
+            if scroll_query.get(walk).is_ok() {
+                commands.entity(walk).insert(StickToBottom::default());
                 break;
             }
             if let Ok(child_of) = parent_query.get(walk) {

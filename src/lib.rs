@@ -83,8 +83,9 @@ pub use interactions::{
 
 // Re-export widgets
 pub use widgets::{
-    Active, BorderStyle, DialogueBox, DialogueConfig, DialogueContent, DialoguePosition,
-    DialogueQueue, DialogueRequest, DialogueScroll, DialogueStyle, DialogueTopicButton,
+    Active, ActiveTopic, AppendDialogueText, BorderStyle, DialogueBox, DialogueConfig,
+    DialogueContent, DialoguePosition, DialogueQueue, DialogueRequest, DialogueScroll,
+    DialogueStyle, DialogueTopicButton, DialogueTopicsLocked, SetDialogueChoices,
     DialogueTopicPanel, Disabled, DismissDialogue, DismissDialogueEvent, DismissModal,
     DismissModalEvent, HyperLinkClicked, HyperLinkSpan, HyperText, HyperTextConfig,
     SpawnHyperTextExt, InteractiveVisual, ListItem, ListItemSelected, ListView, ListViewConfig,
@@ -94,7 +95,7 @@ pub use widgets::{
     SpawnProgressBarExt, SpawnScrollViewExt, StatDiff, Tab, TabContent, TabGroup, Tooltip,
     TooltipBuilder, TooltipContent, TooltipSection, TooltipSet, TooltipState, TooltipStyle,
     TooltipUI, TopicContainer, TopicDiscovered, TopicEntry, TopicRegistry, VisualStyle,
-    append_dialogue_text, append_topic_block, spawn_modal_button,
+    append_topic_block, spawn_modal_button,
     SpawnWindowExt, UiWindow, WindowCloseButton, WindowClosable, WindowConfig, WindowContent,
     WindowDrag, WindowDragState, WindowFocused, WindowManager, WindowMovable, WindowTitleBar,
     WINDOW_Z_BASE,

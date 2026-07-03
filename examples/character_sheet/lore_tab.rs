@@ -141,6 +141,7 @@ pub fn spawn_lore_tab(parent: &mut ChildSpawnerCommands) {
                 link_color: Color::srgb(0.4, 0.65, 0.95),
                 link_hover_color: Color::srgb(0.6, 0.8, 1.0),
                 visited_link_color: Some(Color::srgb(0.55, 0.4, 0.75)),
+                disabled_link_color: Color::srgb(0.4, 0.4, 0.45),
                 width: Val::Percent(100.0),
                 font_size: Some(18.0),
             };

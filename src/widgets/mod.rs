@@ -42,7 +42,7 @@ pub use modal::{
 pub use panel::{PanelConfig, SpawnPanelExt};
 pub use scroll_view::{
     ScrollDirection, ScrollView, ScrollViewConfig, ScrollbarDragState, ScrollbarThumb,
-    ScrollbarTrack, SpawnScrollViewExt,
+    ScrollbarTrack, SpawnScrollViewExt, StickToBottom,
 };
 pub use visual::{Active, BorderStyle, Disabled, InteractiveVisual, Selected, VisualStyle};
 
@@ -58,20 +58,26 @@ pub(crate) use scroll_view::{
 };
 pub(crate) use modal::{handle_dismiss_event, handle_modal_dismiss, process_modal_queue, reveal_modal_panel};
 pub use dialogue::{
-    DialogueBox, DialogueConfig, DialogueContent, DialoguePosition, DialogueQueue,
-    DialogueRequest, DialogueScroll, DialogueStyle, DialogueTopicButton, DialogueTopicPanel,
-    DismissDialogue, DismissDialogueEvent, TopicDiscovered, TopicEntry, TopicRegistry,
-    append_dialogue_text, has_dialogue,
+    ActiveTopic, DialogueTopicsLocked, DialogueBox, DialogueChoice, DialogueChoiceButton,
+    DialogueChoiceSelected, DialogueChoicesRow,
+    DialogueConfig, DialogueContent, DialoguePosition, DialoguePresentation, DialogueQueue,
+    DialogueRequest,
+    DialogueScroll, DialogueStyle, DialogueTopicButton, DialogueTopicPanel, DismissDialogue,
+    DismissDialogueEvent, SetDialogueChoices, AppendDialogueText, TopicDiscovered, TopicEntry,
+    TopicRegistry, has_dialogue,
 };
 pub(crate) use dialogue::{
-    handle_dialogue_dismiss_event, handle_dialogue_dismiss_input,
-    handle_topic_panel_clicks, process_dialogue_queue, topic_button_hover, update_topic_panel,
+    apply_append_text, apply_set_choices, handle_choice_clicks, handle_choice_hotkeys,
+    handle_dialogue_dismiss_event,
+    handle_dialogue_dismiss_input, handle_topic_panel_clicks, process_dialogue_queue,
+    track_active_topic, update_choice_button_visuals, update_topic_button_colors,
+    update_topic_panel,
 };
 pub use hypertext::{
     HyperLinkClicked, HyperLinkSpan, HyperText, HyperTextConfig, HyperTextHoverState,
     SpawnHyperTextExt, TopicContainer, append_topic_block,
 };
-pub(crate) use hypertext::{apply_initial_visited_colors, handle_topic_container, has_hypertext, hypertext_click, hypertext_hover, update_visited_link_colors};
+pub(crate) use hypertext::{apply_initial_visited_colors, apply_topic_lock_dimming, handle_topic_container, has_hypertext, hypertext_click, hypertext_hover, update_visited_link_colors};
 #[cfg(feature = "viewport3d")]
 pub use viewport3d::{
     Viewport3d, Viewport3dCamera, Viewport3dConfig, Viewport3dDragState, Viewport3dHandle,

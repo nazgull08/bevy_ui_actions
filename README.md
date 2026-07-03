@@ -28,7 +28,7 @@ Instead of matching `Interaction` changes in every system, define **action struc
 - **Slot grids** — `spawn_slot_grid` + `Slot { container, index }` + `dragged_slot`; container-agnostic drag&drop slots (inventories, chests)
 - **Modals** — `ModalQueue` + backdrop + ESC dismiss + focus trap
 - **HyperText** — inline clickable `[links|key]` with glyph-level hit-testing
-- **Dialogue** — Morrowind-style dialogue box with TopicRegistry + topic panel + visited links
+- **Dialogue** — Morrowind-style dialogue box: `TopicRegistry` + topic panel, active-topic highlight, answer choices (mouse **and** number keys), in-place `SetDialogueChoices` / `AppendDialogueText` events for topic-node flows, and a topic lock while a decision is pending
 - **TopicContainer** — generic topic expansion outside dialogue (works with HyperText links)
 - **Viewport3d** — 3D render-to-texture preview inside UI *(feature `viewport3d`)*
 

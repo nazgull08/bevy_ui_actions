@@ -4,6 +4,9 @@
 //! - Dialogue box with speaker name and hypertext
 //! - TopicRegistry: automatic topic navigation via hyperlinks
 //! - Visited link coloring (discovered topics shown in different color)
+//! - Active-topic highlight: the last-opened topic is highlighted in the panel
+//! - Topic-nodes flow: opening the "Sealed Vaults" topic presents answer choices
+//!   (SetDialogueChoices); picking one clears them (DialogueChoiceSelected)
 //! - ESC to dismiss, auto-scroll on append
 //!
 //! Run: `cargo run --example dialogue -p bevy_ui_actions`
@@ -16,7 +19,15 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugins(UiActionsPlugin)
         .add_systems(Startup, setup)
-        .add_systems(Update, (open_dialogue, log_discoveries))
+        .add_systems(
+            Update,
+            (
+                open_dialogue,
+                log_discoveries,
+                present_vault_choices,
+                resolve_choice,
+            ),
+        )
         .run();
 }
 
@@ -64,6 +75,12 @@ fn setup(mut commands: Commands) {
         "The Southern Kingdoms were a loose confederation of city-states. Their refusal to submit to the [Iron Council|council] sparked the [Forgotten War|war]. Today, most have been absorbed into the allied cities.",
     ).with_category("factions"));
 
+    // A "decision" topic: opening it presents choices (see `present_vault_choices`).
+    registry.insert("vaults", TopicEntry::new(
+        "The Sealed Vaults",
+        "The deepest vaults hold the most dangerous knowledge, sealed by the [Iron Council|council]. Only the Archivist may grant passage. Will you request it?",
+    ).with_category("locations"));
+
     commands.insert_resource(registry);
 
     // UI
@@ -94,8 +111,11 @@ fn setup(mut commands: Commands) {
                 btn.ui_text(TextRole::Button, "Talk to Librarian");
             });
 
-            root.ui_text(TextRole::Caption, "Press ESC to dismiss the dialogue")
-                .insert(HintText);
+            root.ui_text(
+                TextRole::Caption,
+                "Click topics to append responses — the log auto-scrolls to the newest. ESC dismisses.",
+            )
+            .insert(HintText);
         });
 }
 
@@ -108,14 +128,17 @@ impl UiAction for OpenDialogue {
         let mut queue = world.resource_mut::<DialogueQueue>();
         queue.show(
             DialogueRequest::new(
-                "Welcome to the [Ancient Library|library], traveler. Here you will find records of the [Crystal Spire|crystal_spire], the [Forgotten War|war], and the edicts of the [Iron Council|council]. What would you like to know about?",
+                "Welcome to the [Ancient Library|library], traveler. Here you will find records of the [Crystal Spire|crystal_spire], the [Forgotten War|war], and the edicts of the [Iron Council|council]. You may also request access to the [Sealed Vaults|vaults]. What would you like to know about?",
             )
             .with_speaker("Archivist Maren")
+            // Starts in pure topic mode — no choices. Opening the "vaults" topic
+            // presents a decision (see `present_vault_choices`).
             .with_config(DialogueConfig {
                 hypertext: HyperTextConfig {
                     font_size: Some(18.0),
                     ..default()
                 },
+                height: Val::Px(460.0),
                 ..default()
             }),
         );
@@ -130,5 +153,50 @@ fn open_dialogue() {
 fn log_discoveries(mut events: EventReader<TopicDiscovered>) {
     for event in events.read() {
         info!("Topic discovered: '{}'", event.topic);
+    }
+}
+
+/// Topic-node flow: opening the "vaults" topic presents a decision. Both topic-panel
+/// clicks and in-text `[Sealed Vaults|vaults]` links funnel through `HyperLinkClicked`,
+/// so this catches either. The library also appends the topic's lore (auto-append).
+fn present_vault_choices(
+    mut links: EventReader<HyperLinkClicked>,
+    mut set_choices: EventWriter<SetDialogueChoices>,
+    mut topics_locked: ResMut<DialogueTopicsLocked>,
+) {
+    for link in links.read() {
+        if link.topic == "vaults" {
+            set_choices.write(SetDialogueChoices::new(vec![
+                DialogueChoice::new("Ask the Archivist for passage", "vault_enter"),
+                DialogueChoice::new("Never mind", "vault_cancel"),
+            ]));
+            // A decision is pending — lock topics until it's resolved.
+            topics_locked.0 = true;
+        }
+    }
+}
+
+/// Resolve a choice: log the outcome (a real game would append text / set a flag /
+/// open trade), clear the choices and unlock topics so browsing resumes.
+fn resolve_choice(
+    mut events: EventReader<DialogueChoiceSelected>,
+    mut set_choices: EventWriter<SetDialogueChoices>,
+    mut append: EventWriter<AppendDialogueText>,
+    mut topics_locked: ResMut<DialogueTopicsLocked>,
+) {
+    for event in events.read() {
+        let result = match event.key.as_str() {
+            "vault_enter" => {
+                "The Archivist studies you for a long moment. \"The vaults remain sealed, \
+                 traveler. Not for such as you.\""
+            }
+            "vault_cancel" => "You nod and step back from the request.",
+            _ => continue,
+        };
+        // Visible outcome in the log (auto-scrolls to it).
+        append.write(AppendDialogueText::new(result));
+        // Decision made → clear choices and resume browsing topics.
+        set_choices.write(SetDialogueChoices::clear());
+        topics_locked.0 = false;
     }
 }
