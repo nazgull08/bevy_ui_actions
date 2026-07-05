@@ -34,11 +34,26 @@ struct DemoItem {
 }
 
 const ITEMS: &[DemoItem] = &[
-    DemoItem { name: "Sword", color: Color::srgb(0.80, 0.30, 0.30) },
-    DemoItem { name: "Potion", color: Color::srgb(0.30, 0.80, 0.30) },
-    DemoItem { name: "Shield", color: Color::srgb(0.30, 0.50, 0.90) },
-    DemoItem { name: "Gem", color: Color::srgb(0.85, 0.70, 0.20) },
-    DemoItem { name: "Key", color: Color::srgb(0.70, 0.70, 0.70) },
+    DemoItem {
+        name: "Sword",
+        color: Color::srgb(0.80, 0.30, 0.30),
+    },
+    DemoItem {
+        name: "Potion",
+        color: Color::srgb(0.30, 0.80, 0.30),
+    },
+    DemoItem {
+        name: "Shield",
+        color: Color::srgb(0.30, 0.50, 0.90),
+    },
+    DemoItem {
+        name: "Gem",
+        color: Color::srgb(0.85, 0.70, 0.20),
+    },
+    DemoItem {
+        name: "Key",
+        color: Color::srgb(0.70, 0.70, 0.70),
+    },
 ];
 
 const SLOT_COUNT: usize = 8;
@@ -111,16 +126,7 @@ fn setup(mut commands: Commands) {
     // Persistent character container with some starting items.
     let character = commands
         .spawn(DemoInventory {
-            slots: vec![
-                Some(0),
-                Some(1),
-                None,
-                Some(2),
-                None,
-                None,
-                Some(3),
-                None,
-            ],
+            slots: vec![Some(0), Some(1), None, Some(2), None, None, Some(3), None],
         })
         .id();
 
@@ -132,7 +138,10 @@ fn setup(mut commands: Commands) {
                 &SlotGridConfig::default(),
                 character,
                 SLOT_COUNT,
-                move |index| DropToSlot { container: character, index },
+                move |index| DropToSlot {
+                    container: character,
+                    index,
+                },
                 |_slot, _index| {},
             );
         },
@@ -141,16 +150,7 @@ fn setup(mut commands: Commands) {
     // Persistent chest container, open by default. Its window is toggled with `E`.
     let chest = commands
         .spawn(DemoInventory {
-            slots: vec![
-                Some(4),
-                None,
-                Some(2),
-                None,
-                None,
-                Some(0),
-                None,
-                None,
-            ],
+            slots: vec![Some(4), None, Some(2), None, None, Some(0), None, None],
         })
         .id();
     commands.insert_resource(ChestContainer(chest));
@@ -159,18 +159,18 @@ fn setup(mut commands: Commands) {
 
 /// Spawn the chest window (a view onto the chest container) and tag it.
 fn spawn_chest_window(commands: &mut Commands, chest: Entity) {
-    let window = commands.spawn_window(
-        WindowConfig::new("Chest", Vec2::new(460.0, 120.0)),
-        |c| {
-            c.spawn_slot_grid(
-                &SlotGridConfig::default(),
-                chest,
-                SLOT_COUNT,
-                move |index| DropToSlot { container: chest, index },
-                |_slot, _index| {},
-            );
-        },
-    );
+    let window = commands.spawn_window(WindowConfig::new("Chest", Vec2::new(460.0, 120.0)), |c| {
+        c.spawn_slot_grid(
+            &SlotGridConfig::default(),
+            chest,
+            SLOT_COUNT,
+            move |index| DropToSlot {
+                container: chest,
+                index,
+            },
+            |_slot, _index| {},
+        );
+    });
     commands.entity(window).insert(ChestWindow);
 }
 

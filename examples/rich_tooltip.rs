@@ -121,8 +121,7 @@ fn setup(mut commands: Commands, equipped: Res<EquippedItem>) {
                 .with_children(|col| {
                     col.ui_text(TextRole::Button, "Simple Tooltips");
 
-                    col.spawn(Node::row(15.0))
-                    .with_children(|row| {
+                    col.spawn(Node::row(15.0)).with_children(|row| {
                         spawn_simple_button(row, "Button A", "Simple text tooltip");
                         spawn_simple_button(row, "Button B", "Another tooltip");
                         spawn_simple_button(row, "Button C", "Short tip");
@@ -140,15 +139,17 @@ fn setup(mut commands: Commands, equipped: Res<EquippedItem>) {
                 .with_children(|col| {
                     col.ui_text(TextRole::Button, "Rich Tooltips (Items)");
 
-                    col.spawn(Node::row(15.0))
-                    .with_children(|row| {
+                    col.spawn(Node::row(15.0)).with_children(|row| {
                         for item in ITEMS {
                             spawn_item_slot(row, item, &equipped);
                         }
                     });
                 });
 
-            parent.ui_text(TextRole::Caption, "Green = better, Red = worse than equipped");
+            parent.ui_text(
+                TextRole::Caption,
+                "Green = better, Red = worse than equipped",
+            );
         });
 }
 

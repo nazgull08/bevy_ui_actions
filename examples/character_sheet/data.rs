@@ -438,7 +438,9 @@ impl UiAction for DropToEquipSlot {
             }
             apply_item_bonuses(&mut world.resource_mut::<CharacterStats>(), item_idx);
 
-            world.resource_mut::<EquipmentState>().set(self.target_slot, Some(item_idx));
+            world
+                .resource_mut::<EquipmentState>()
+                .set(self.target_slot, Some(item_idx));
 
             let mut inv = world.resource_mut::<InventoryState>();
             let removed_slot = inv.remove(item_idx);
@@ -616,7 +618,6 @@ impl Attribute {
             Self::Vitality => Color::srgb(0.75, 0.55, 0.2),
         }
     }
-
 }
 
 // -- Respec Action --
@@ -628,7 +629,10 @@ impl UiAction for RespecAttributes {
         // Remove all equipment bonuses first
         let equipped: Vec<usize> = {
             let equip = world.resource::<EquipmentState>();
-            EquipSlot::ALL.iter().filter_map(|s| equip.get(*s)).collect()
+            EquipSlot::ALL
+                .iter()
+                .filter_map(|s| equip.get(*s))
+                .collect()
         };
         for idx in &equipped {
             remove_item_bonuses(&mut world.resource_mut::<CharacterStats>(), *idx);

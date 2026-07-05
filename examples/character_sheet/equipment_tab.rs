@@ -96,28 +96,31 @@ fn spawn_equip_slot(
 ) {
     let item = equip.get(slot);
     let has_item = item.is_some();
-    let bg = if has_item { EQUIP_FILLED_BG } else { EQUIP_EMPTY_BG };
+    let bg = if has_item {
+        EQUIP_FILLED_BG
+    } else {
+        EQUIP_EMPTY_BG
+    };
 
-    let mut ec = parent
-        .spawn((
-            Node {
-                width: Val::Px(SLOT_SIZE),
-                height: Val::Px(SLOT_SIZE),
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                border: UiRect::all(Val::Px(1.0)),
-                flex_direction: FlexDirection::Column,
-                row_gap: Val::Px(2.0),
-                ..default()
-            },
-            BackgroundColor(bg),
-            BorderColor(EQUIP_DEFAULT_BORDER),
-            DropTarget,
-            OnDrop::new(DropToEquipSlot { target_slot: slot }),
-            EquipSlotUI(slot),
-            Interaction::None,
-            OnRightClick::new(ShowUnequipModal { slot }),
-        ));
+    let mut ec = parent.spawn((
+        Node {
+            width: Val::Px(SLOT_SIZE),
+            height: Val::Px(SLOT_SIZE),
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            border: UiRect::all(Val::Px(1.0)),
+            flex_direction: FlexDirection::Column,
+            row_gap: Val::Px(2.0),
+            ..default()
+        },
+        BackgroundColor(bg),
+        BorderColor(EQUIP_DEFAULT_BORDER),
+        DropTarget,
+        OnDrop::new(DropToEquipSlot { target_slot: slot }),
+        EquipSlotUI(slot),
+        Interaction::None,
+        OnRightClick::new(ShowUnequipModal { slot }),
+    ));
 
     if let Some(idx) = item {
         ec.insert((Draggable, build_item_tooltip(idx)));
@@ -125,7 +128,7 @@ fn spawn_equip_slot(
 
     ec.with_children(|s| {
         let icon_size = SLOT_SIZE - ICON_PADDING * 2.0 - 2.0; // minus border
-        // Icon image (always present, visibility toggled)
+                                                              // Icon image (always present, visibility toggled)
         let mut icon_ec = s.spawn((
             ImageNode::default(),
             Node {
@@ -137,7 +140,11 @@ fn spawn_equip_slot(
                 ..default()
             },
             SlotIcon,
-            if has_item { Visibility::Visible } else { Visibility::Hidden },
+            if has_item {
+                Visibility::Visible
+            } else {
+                Visibility::Hidden
+            },
         ));
         if let Some(idx) = item {
             icon_ec.insert(ImageNode::new(asset_server.load(ITEMS[idx].icon)));
@@ -158,14 +165,22 @@ fn spawn_equip_slot(
                 ..default()
             },
             SlotName,
-            if has_item { Visibility::Visible } else { Visibility::Hidden },
+            if has_item {
+                Visibility::Visible
+            } else {
+                Visibility::Hidden
+            },
         ));
 
         // Label (shown when empty)
         s.ui_text_styled(slot.label(), 11.0, Color::srgb(0.35, 0.35, 0.4))
             .insert((
                 SlotLabel,
-                if has_item { Visibility::Hidden } else { Visibility::Visible },
+                if has_item {
+                    Visibility::Hidden
+                } else {
+                    Visibility::Visible
+                },
             ));
     });
 }
@@ -224,7 +239,11 @@ fn spawn_inv_slot(
     asset_server: &AssetServer,
 ) {
     let has_item = item.is_some();
-    let bg = if has_item { SLOT_FILLED_BG } else { SLOT_EMPTY_BG };
+    let bg = if has_item {
+        SLOT_FILLED_BG
+    } else {
+        SLOT_EMPTY_BG
+    };
 
     let mut ec = parent.spawn((
         Node {
@@ -240,7 +259,9 @@ fn spawn_inv_slot(
         BackgroundColor(bg),
         BorderColor(INV_DEFAULT_BORDER),
         DropTarget,
-        OnDrop::new(DropToInvSlot { target_idx: inv_idx }),
+        OnDrop::new(DropToInvSlot {
+            target_idx: inv_idx,
+        }),
         InvSlot(inv_idx),
         Interaction::None,
     ));
@@ -263,7 +284,11 @@ fn spawn_inv_slot(
                 ..default()
             },
             SlotIcon,
-            if has_item { Visibility::Visible } else { Visibility::Hidden },
+            if has_item {
+                Visibility::Visible
+            } else {
+                Visibility::Hidden
+            },
         ));
         if let Some(idx) = item {
             icon_ec.insert(ImageNode::new(asset_server.load(ITEMS[idx].icon)));
@@ -284,7 +309,11 @@ fn spawn_inv_slot(
                 ..default()
             },
             SlotName,
-            if has_item { Visibility::Visible } else { Visibility::Hidden },
+            if has_item {
+                Visibility::Visible
+            } else {
+                Visibility::Hidden
+            },
         ));
     });
 }
@@ -392,11 +421,17 @@ pub fn sync_equipment(
         let has_item = item.is_some();
 
         if let Ok(mut bg) = bg_query.get_mut(entity) {
-            *bg = BackgroundColor(if has_item { EQUIP_FILLED_BG } else { EQUIP_EMPTY_BG });
+            *bg = BackgroundColor(if has_item {
+                EQUIP_FILLED_BG
+            } else {
+                EQUIP_EMPTY_BG
+            });
         }
 
         if let Some(idx) = item {
-            commands.entity(entity).insert((Draggable, build_item_tooltip(idx)));
+            commands
+                .entity(entity)
+                .insert((Draggable, build_item_tooltip(idx)));
         } else {
             commands.entity(entity).remove::<(Draggable, Tooltip)>();
         }
@@ -417,7 +452,11 @@ pub fn sync_equipment(
         let has_item = item.is_some();
 
         if let Ok(mut bg) = bg_query.get_mut(entity) {
-            *bg = BackgroundColor(if has_item { SLOT_FILLED_BG } else { SLOT_EMPTY_BG });
+            *bg = BackgroundColor(if has_item {
+                SLOT_FILLED_BG
+            } else {
+                SLOT_EMPTY_BG
+            });
         }
 
         if let Some(idx) = item {
@@ -458,24 +497,38 @@ fn sync_slot_children(
             }
         }
         if let Ok(mut vis) = vis_query.get_mut(icon_entity) {
-            *vis = if has_item { Visibility::Visible } else { Visibility::Hidden };
+            *vis = if has_item {
+                Visibility::Visible
+            } else {
+                Visibility::Hidden
+            };
         }
     }
 
     // Name text (index 1)
     if let Some(&name_entity) = child_list.get(1) {
         if let Ok(mut text) = text_query.get_mut(name_entity) {
-            **text = item.map(|idx| ITEMS[idx].name.to_string()).unwrap_or_default();
+            **text = item
+                .map(|idx| ITEMS[idx].name.to_string())
+                .unwrap_or_default();
         }
         if let Ok(mut vis) = vis_query.get_mut(name_entity) {
-            *vis = if has_item { Visibility::Visible } else { Visibility::Hidden };
+            *vis = if has_item {
+                Visibility::Visible
+            } else {
+                Visibility::Hidden
+            };
         }
     }
 
     // Label (index 2, only equip slots have it)
     if let Some(&label_entity) = child_list.get(2) {
         if let Ok(mut vis) = vis_query.get_mut(label_entity) {
-            *vis = if has_item { Visibility::Hidden } else { Visibility::Visible };
+            *vis = if has_item {
+                Visibility::Hidden
+            } else {
+                Visibility::Visible
+            };
         }
     }
 }
@@ -530,7 +583,11 @@ pub fn highlight_compatible_slots(
                 border.0 = EQUIP_DEFAULT_BORDER;
             }
         }
-        bg.0 = if has_item { EQUIP_FILLED_BG } else { EQUIP_EMPTY_BG };
+        bg.0 = if has_item {
+            EQUIP_FILLED_BG
+        } else {
+            EQUIP_EMPTY_BG
+        };
     }
 
     // Inventory slots — always valid drop targets
@@ -544,6 +601,10 @@ pub fn highlight_compatible_slots(
                 border.0 = INV_DEFAULT_BORDER;
             }
         }
-        bg.0 = if has_item { SLOT_FILLED_BG } else { SLOT_EMPTY_BG };
+        bg.0 = if has_item {
+            SLOT_FILLED_BG
+        } else {
+            SLOT_EMPTY_BG
+        };
     }
 }

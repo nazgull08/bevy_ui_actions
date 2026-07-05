@@ -115,9 +115,7 @@ fn setup(mut commands: Commands) {
                 });
 
             // Current values text
-            parent
-                .ui_text(TextRole::Body, "")
-                .insert(StatsText);
+            parent.ui_text(TextRole::Body, "").insert(StatsText);
 
             // Controls hint
             parent.ui_text(

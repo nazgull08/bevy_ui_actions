@@ -71,8 +71,7 @@ pub fn resolve_mannequin(
         }
     }
 
-    let (Some(head), Some(torso), Some(hand_r), Some(hand_l)) =
-        (head, torso, hand_r, hand_l)
+    let (Some(head), Some(torso), Some(hand_r), Some(hand_l)) = (head, torso, hand_r, hand_l)
     else {
         return; // Scene not loaded yet
     };
@@ -122,7 +121,9 @@ pub fn propagate_render_layers(
         let mut current = mesh_entity;
         loop {
             if roots.contains(&current) {
-                commands.entity(mesh_entity).insert(parts.render_layer.clone());
+                commands
+                    .entity(mesh_entity)
+                    .insert(parts.render_layer.clone());
                 break;
             }
             if let Ok(child_of) = parent_query.get(current) {

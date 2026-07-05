@@ -145,8 +145,9 @@ impl SpawnViewport3dExt for Commands<'_, '_> {
             TextureFormat::Bgra8UnormSrgb,
             RenderAssetUsages::default(),
         );
-        image.texture_descriptor.usage =
-            TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST | TextureUsages::RENDER_ATTACHMENT;
+        image.texture_descriptor.usage = TextureUsages::TEXTURE_BINDING
+            | TextureUsages::COPY_DST
+            | TextureUsages::RENDER_ATTACHMENT;
         let image_handle = images.add(image);
 
         let layer = RenderLayers::layer(config.render_layer as usize);
@@ -163,8 +164,8 @@ impl SpawnViewport3dExt for Commands<'_, '_> {
             .id();
 
         // 3. Spawn camera
-        let camera_pos = config.camera_target
-            + Vec3::new(0.0, config.camera_height, config.camera_distance);
+        let camera_pos =
+            config.camera_target + Vec3::new(0.0, config.camera_height, config.camera_distance);
         let camera = self
             .spawn((
                 Camera3d::default(),
@@ -178,8 +179,7 @@ impl SpawnViewport3dExt for Commands<'_, '_> {
                     fov: config.camera_fov.to_radians(),
                     ..default()
                 }),
-                Transform::from_translation(camera_pos)
-                    .looking_at(config.camera_target, Vec3::Y),
+                Transform::from_translation(camera_pos).looking_at(config.camera_target, Vec3::Y),
                 layer.clone(),
                 Name::new("Viewport3d_Camera"),
             ))
@@ -343,11 +343,14 @@ pub(crate) fn viewport3d_track(
     mut tracked: ResMut<Viewport3dTracked>,
 ) {
     for (entity, viewport) in &query {
-        tracked.map.insert(entity, Viewport3dEntities {
-            camera: viewport.camera,
-            light: viewport.light,
-            pivot: viewport.pivot,
-        });
+        tracked.map.insert(
+            entity,
+            Viewport3dEntities {
+                camera: viewport.camera,
+                light: viewport.light,
+                pivot: viewport.pivot,
+            },
+        );
     }
 }
 

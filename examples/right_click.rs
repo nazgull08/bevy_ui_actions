@@ -74,18 +74,23 @@ fn setup(mut commands: Commands) {
             parent.ui_text(TextRole::Heading, "Right Click Example");
 
             // Items row
-            parent
-                .spawn(Node::row(20.0))
-                .with_children(|row| {
-                    spawn_item(row, "Sword", Color::srgb(0.7, 0.5, 0.3));
-                    spawn_item(row, "Shield", Color::srgb(0.4, 0.4, 0.6));
-                    spawn_item(row, "Potion", Color::srgb(0.3, 0.7, 0.4));
-                });
+            parent.spawn(Node::row(20.0)).with_children(|row| {
+                spawn_item(row, "Sword", Color::srgb(0.7, 0.5, 0.3));
+                spawn_item(row, "Shield", Color::srgb(0.4, 0.4, 0.6));
+                spawn_item(row, "Potion", Color::srgb(0.3, 0.7, 0.4));
+            });
 
-            parent.ui_text(TextRole::Label, "Left click to select, Right click for context menu");
+            parent.ui_text(
+                TextRole::Label,
+                "Left click to select, Right click for context menu",
+            );
 
             parent
-                .ui_text_styled("Actions will appear here...", 18.0, Color::srgb(0.6, 0.8, 0.6))
+                .ui_text_styled(
+                    "Actions will appear here...",
+                    18.0,
+                    Color::srgb(0.6, 0.8, 0.6),
+                )
                 .insert(LogText);
         });
 }

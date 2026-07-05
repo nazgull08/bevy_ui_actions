@@ -81,35 +81,36 @@ fn setup(mut commands: Commands) {
                 .insert(CounterText);
 
             // Buttons row
-            parent
-                .spawn(Node::row(20.0))
-                .with_children(|row| {
-                    // Decrement button with hover/press logging
-                    row.spawn((
-                        Button,
-                        Node {
-                            width: Val::Px(80.0),
-                            height: Val::Px(50.0),
-                            justify_content: JustifyContent::Center,
-                            align_items: AlignItems::Center,
-                            ..default()
-                        },
-                        BackgroundColor(Color::srgb(0.2, 0.2, 0.2)),
-                        OnClick::new(DecrementAction),
-                        OnHover::new(LogHoverAction { name: "Decrement" }),
-                        OnPress::new(LogPressAction { name: "Decrement" }),
-                        InteractiveVisual,
-                    ))
-                    .with_children(|btn| {
-                        btn.ui_text_styled("-", 32.0, Color::WHITE);
-                    });
-
-                    // Increment button — using helper
-                    row.spawn_button(IncrementAction, "+");
+            parent.spawn(Node::row(20.0)).with_children(|row| {
+                // Decrement button with hover/press logging
+                row.spawn((
+                    Button,
+                    Node {
+                        width: Val::Px(80.0),
+                        height: Val::Px(50.0),
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        ..default()
+                    },
+                    BackgroundColor(Color::srgb(0.2, 0.2, 0.2)),
+                    OnClick::new(DecrementAction),
+                    OnHover::new(LogHoverAction { name: "Decrement" }),
+                    OnPress::new(LogPressAction { name: "Decrement" }),
+                    InteractiveVisual,
+                ))
+                .with_children(|btn| {
+                    btn.ui_text_styled("-", 32.0, Color::WHITE);
                 });
 
+                // Increment button — using helper
+                row.spawn_button(IncrementAction, "+");
+            });
+
             // Hint
-            parent.ui_text(TextRole::Caption, "Check console for hover/press logs on '-' button");
+            parent.ui_text(
+                TextRole::Caption,
+                "Check console for hover/press logs on '-' button",
+            );
         });
 }
 

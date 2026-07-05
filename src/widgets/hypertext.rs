@@ -308,7 +308,13 @@ impl SpawnHyperTextExt for ChildSpawnerCommands<'_> {
 pub(crate) fn hypertext_click(
     mouse: Res<ButtonInput<MouseButton>>,
     windows: Query<&Window>,
-    query: Query<(Entity, &HyperText, &TextLayoutInfo, &GlobalTransform, &ComputedNode)>,
+    query: Query<(
+        Entity,
+        &HyperText,
+        &TextLayoutInfo,
+        &GlobalTransform,
+        &ComputedNode,
+    )>,
     mut events: EventWriter<HyperLinkClicked>,
 ) {
     if !mouse.just_pressed(MouseButton::Left) {
@@ -358,8 +364,8 @@ pub(crate) fn hypertext_hover(
     let cursor = windows.single().ok().and_then(|w| w.cursor_position());
 
     for (hyper, layout, transform, computed, mut hover_state, children) in &mut query {
-        let hovered_span = cursor
-            .and_then(|c| hit_test_span_index(c, hyper, layout, transform, computed));
+        let hovered_span =
+            cursor.and_then(|c| hit_test_span_index(c, hyper, layout, transform, computed));
 
         if hovered_span == hover_state.hovered_span {
             continue;
@@ -674,7 +680,9 @@ fn build_span_rects(
             continue; // skip zero-size glyphs (spaces, etc.)
         }
         let cy = glyph.position.y + glyph.size.y * 0.5;
-        let found = row_centers.iter().any(|&rc| (rc - cy).abs() < font_size * 0.5);
+        let found = row_centers
+            .iter()
+            .any(|&rc| (rc - cy).abs() < font_size * 0.5);
         if !found {
             row_centers.push(cy);
         }
@@ -686,9 +694,7 @@ fn build_span_rects(
         row_centers
             .iter()
             .enumerate()
-            .min_by(|(_, a), (_, b)| {
-                (*a - cy).abs().partial_cmp(&(*b - cy).abs()).unwrap()
-            })
+            .min_by(|(_, a), (_, b)| (*a - cy).abs().partial_cmp(&(*b - cy).abs()).unwrap())
             .map(|(i, _)| i)
             .unwrap_or(0)
     };
@@ -804,7 +810,6 @@ fn hit_test_span_index(
 // ============================================================
 // Color helpers
 // ============================================================
-
 
 /// Set the TextColor of a span by index.
 ///

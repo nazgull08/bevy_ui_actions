@@ -27,32 +27,30 @@ struct StatusText;
 fn setup(mut commands: Commands) {
     commands.spawn(Camera2d);
 
-    commands
-        .spawn(Node::centered(20.0))
-        .with_children(|root| {
-            root.ui_text(TextRole::Heading, "Modal Examples");
+    commands.spawn(Node::centered(20.0)).with_children(|root| {
+        root.ui_text(TextRole::Heading, "Modal Examples");
 
-            // Status text
-            root.ui_text(TextRole::Body, "Click a button to open a modal")
-                .insert(StatusText);
+        // Status text
+        root.ui_text(TextRole::Body, "Click a button to open a modal")
+            .insert(StatusText);
 
-            // Button row
-            root.spawn(Node {
-                flex_direction: FlexDirection::Row,
-                column_gap: Val::Px(15.0),
-                ..default()
-            })
-            .with_children(|row| {
-                spawn_button(row, "Confirm Dialog", ShowConfirmModal);
-                spawn_button(row, "Custom Modal", ShowCustomModal);
-                spawn_button(row, "Non-dismissable", ShowLockedModal);
-            });
-
-            root.ui_text(
-                TextRole::Caption,
-                "ESC or click backdrop to dismiss (unless non-dismissable)",
-            );
+        // Button row
+        root.spawn(Node {
+            flex_direction: FlexDirection::Row,
+            column_gap: Val::Px(15.0),
+            ..default()
+        })
+        .with_children(|row| {
+            spawn_button(row, "Confirm Dialog", ShowConfirmModal);
+            spawn_button(row, "Custom Modal", ShowCustomModal);
+            spawn_button(row, "Non-dismissable", ShowLockedModal);
         });
+
+        root.ui_text(
+            TextRole::Caption,
+            "ESC or click backdrop to dismiss (unless non-dismissable)",
+        );
+    });
 }
 
 // ============ Actions ============

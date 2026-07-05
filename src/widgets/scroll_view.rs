@@ -314,8 +314,7 @@ impl SpawnScrollViewExt for Commands<'_, '_> {
             .id();
 
         if let Some(color) = config.background {
-            self.entity(scroll_entity)
-                .insert(BackgroundColor(color));
+            self.entity(scroll_entity).insert(BackgroundColor(color));
         }
 
         self.entity(scroll_entity).with_children(children);
@@ -695,8 +694,8 @@ pub(crate) fn handle_scrollbar_drag(
             if drag_state.usable_track > 0.0 && drag_state.max_scroll > 0.0 {
                 // Convert pixel mouse delta to scroll delta (1:1 with thumb movement)
                 let scroll_delta = delta_mouse * (drag_state.max_scroll / drag_state.usable_track);
-                let new_offset =
-                    (drag_state.start_scroll_offset + scroll_delta).clamp(0.0, drag_state.max_scroll);
+                let new_offset = (drag_state.start_scroll_offset + scroll_delta)
+                    .clamp(0.0, drag_state.max_scroll);
 
                 if let Ok((mut scroll_pos, _, _)) = scroll_query.get_mut(scroll_entity) {
                     scroll_pos.offset_y = new_offset;
@@ -717,7 +716,13 @@ pub(crate) fn handle_track_click(
     windows: Query<&Window>,
     drag_state: Res<ScrollbarDragState>,
     track_query: Query<
-        (Entity, &Interaction, &ScrollbarTrack, &GlobalTransform, &ComputedNode),
+        (
+            Entity,
+            &Interaction,
+            &ScrollbarTrack,
+            &GlobalTransform,
+            &ComputedNode,
+        ),
         Without<ScrollView>,
     >,
     mut scroll_query: Query<(&mut ScrollPosition, &ComputedNode, &Children), With<ScrollView>>,
@@ -754,8 +759,7 @@ pub(crate) fn handle_track_click(
             }
         }
 
-        let Ok((mut scroll_pos, viewport_node, children)) =
-            scroll_query.get_mut(track.scroll_view)
+        let Ok((mut scroll_pos, viewport_node, children)) = scroll_query.get_mut(track.scroll_view)
         else {
             continue;
         };

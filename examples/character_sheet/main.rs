@@ -22,8 +22,11 @@ use bevy_ui_actions::prelude::*;
 
 use data::*;
 use equipment_tab::{highlight_compatible_slots, spawn_equipment_tab, sync_equipment};
-use mannequin::{spawn_mannequin, sync_mannequin_equipment, resolve_mannequin, propagate_render_layers, MannequinParts};
 use lore_tab::{setup_lore_registry, spawn_lore_tab};
+use mannequin::{
+    propagate_render_layers, resolve_mannequin, spawn_mannequin, sync_mannequin_equipment,
+    MannequinParts,
+};
 use stats_tab::spawn_stats_tab;
 use ui_helpers::*;
 
@@ -245,7 +248,11 @@ fn sync_attributes(
         let delta = prev.attr_delta(attr_val.0, &stats);
         **text = format!("{}", attr_val.0.get(&stats));
         if delta != 0 {
-            let flash_color = if delta > 0 { COLOR_IMPROVED } else { COLOR_WORSENED };
+            let flash_color = if delta > 0 {
+                COLOR_IMPROVED
+            } else {
+                COLOR_WORSENED
+            };
             color.0 = flash_color;
             commands.entity(entity).insert(ChangeFlash {
                 timer: FLASH_DURATION,
@@ -276,7 +283,11 @@ fn sync_attributes(
                 // Parse numeric part for comparison
                 let old_num: f32 = old.trim_end_matches('%').parse().unwrap_or(0.0);
                 let new_num: f32 = new_val.trim_end_matches('%').parse().unwrap_or(0.0);
-                let flash_color = if new_num > old_num { COLOR_IMPROVED } else { COLOR_WORSENED };
+                let flash_color = if new_num > old_num {
+                    COLOR_IMPROVED
+                } else {
+                    COLOR_WORSENED
+                };
                 color.0 = flash_color;
                 commands.entity(entity).insert(ChangeFlash {
                     timer: FLASH_DURATION,

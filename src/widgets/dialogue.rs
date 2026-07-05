@@ -8,6 +8,7 @@ use crate::widgets::hypertext::{
 };
 use crate::widgets::panel::{PanelConfig, SpawnPanelExt};
 use crate::widgets::scroll_view::{ScrollView, StickToBottom};
+use crate::widgets::{InteractiveVisual, VisualStyle};
 
 // ============================================================
 // Config
@@ -55,6 +56,13 @@ pub struct DialogueConfig {
     pub topic_header_role: TextRole,
     /// Whether ESC dismisses the dialogue.
     pub close_on_esc: bool,
+    /// Show a close ("Goodbye") button pinned to the bottom-right of the panel.
+    /// Clicking it emits [`DialogueCloseRequested`]; the library's default handler
+    /// dismisses on that, but games owning external state (input focus, pause) can
+    /// listen and drive their own teardown instead.
+    pub show_close_button: bool,
+    /// Label for the close button (e.g. "Goodbye", "Farewell", "X").
+    pub close_button_label: String,
     /// Height of the dialogue panel.
     pub height: Val,
     /// Width of the dialogue panel.
@@ -117,6 +125,8 @@ impl Default for DialogueConfig {
             speaker_role: TextRole::Heading,
             topic_header_role: TextRole::Heading,
             close_on_esc: true,
+            show_close_button: false,
+            close_button_label: "Goodbye".to_string(),
             height: Val::Px(380.0),
             width: Val::Percent(80.0),
             show_topic_panel: true,
@@ -444,7 +454,9 @@ impl SetDialogueChoices {
 
     /// Clear all choices (pure topic mode).
     pub fn clear() -> Self {
-        Self { choices: Vec::new() }
+        Self {
+            choices: Vec::new(),
+        }
     }
 }
 
@@ -477,6 +489,19 @@ impl AppendDialogueText {
         self
     }
 }
+
+/// Marker on the dialogue's close ("Goodbye") button.
+#[derive(Component)]
+pub struct DialogueCloseButton;
+
+/// Event: the player asked to close the dialogue via the close button.
+///
+/// The library's default handler (`dismiss_on_close_request`) dismisses on this,
+/// so a standalone dialogue closes with no extra wiring. Games that own external
+/// state (input-focus mode, pause) can listen to it and drive their own teardown
+/// — the library never needs to know about that state.
+#[derive(Event, Debug, Clone)]
+pub struct DialogueCloseRequested;
 
 /// Event: dismiss the current dialogue.
 #[derive(Event)]
@@ -555,19 +580,24 @@ pub(crate) fn process_dialogue_queue(
         request.on_close,
         &discovered_topics,
     );
-    commands.insert_resource(UiInputScope { root: dialogue_entity });
+    commands.insert_resource(UiInputScope {
+        root: dialogue_entity,
+    });
 }
 
-/// Handles ESC to dismiss dialogue.
-pub(crate) fn handle_dialogue_dismiss_input(
+/// Handles ESC → emits [`DialogueCloseRequested`], the unified close signal shared
+/// with the close button. The default [`dismiss_on_close_request`] then dismisses,
+/// so ESC still closes a standalone dialogue; a game owning external state can
+/// listen to the one event for *every* close path (button, ESC) instead.
+pub(crate) fn handle_dialogue_close_input(
     keys: Res<ButtonInput<KeyCode>>,
     query: Query<&DialogueBox>,
-    mut events: EventWriter<DismissDialogueEvent>,
+    mut events: EventWriter<DialogueCloseRequested>,
 ) {
     if keys.just_pressed(KeyCode::Escape) {
         for dialogue in &query {
             if dialogue.close_on_esc {
-                events.write(DismissDialogueEvent);
+                events.write(DialogueCloseRequested);
                 return;
             }
         }
@@ -742,6 +772,30 @@ pub(crate) fn handle_choice_hotkeys(
     }
 }
 
+/// Emits [`DialogueCloseRequested`] when the close ("Goodbye") button is clicked.
+pub(crate) fn handle_close_button_clicks(
+    query: Query<&Interaction, (Changed<Interaction>, With<DialogueCloseButton>)>,
+    mut events: EventWriter<DialogueCloseRequested>,
+) {
+    for interaction in &query {
+        if *interaction == Interaction::Pressed {
+            events.write(DialogueCloseRequested);
+        }
+    }
+}
+
+/// Default reaction to [`DialogueCloseRequested`]: dismiss the dialogue, so a
+/// standalone dialogue closes with no extra wiring. Games that own external state
+/// (input focus, pause) can additionally listen to the event and react.
+pub(crate) fn dismiss_on_close_request(
+    mut requests: EventReader<DialogueCloseRequested>,
+    mut dismiss: EventWriter<DismissDialogueEvent>,
+) {
+    if requests.read().count() > 0 {
+        dismiss.write(DismissDialogueEvent);
+    }
+}
+
 /// Applies [`SetDialogueChoices`]: clears the current choice buttons and repopulates
 /// the always-present [`DialogueChoicesRow`] anchor in place. Only the latest event
 /// this frame is applied (the choice set is a state, not a stream).
@@ -850,15 +904,23 @@ pub(crate) fn update_choice_button_visuals(
 
     for (entity, interaction, button, children) in &query {
         let (bg, border, text) = if !button.enabled {
-            (c.choice_bg_disabled, c.choice_border, c.choice_disabled_color)
+            (
+                c.choice_bg_disabled,
+                c.choice_border,
+                c.choice_disabled_color,
+            )
         } else {
             match interaction {
-                Interaction::Pressed => {
-                    (c.choice_bg_pressed, c.choice_border_hover, c.choice_text_color)
-                }
-                Interaction::Hovered => {
-                    (c.choice_bg_hover, c.choice_border_hover, c.choice_text_color)
-                }
+                Interaction::Pressed => (
+                    c.choice_bg_pressed,
+                    c.choice_border_hover,
+                    c.choice_text_color,
+                ),
+                Interaction::Hovered => (
+                    c.choice_bg_hover,
+                    c.choice_border_hover,
+                    c.choice_text_color,
+                ),
                 Interaction::None => (c.choice_bg, c.choice_border, c.choice_text_color),
             }
         };
@@ -926,9 +988,7 @@ pub(crate) fn update_topic_panel(
     commands.entity(panel_entity).with_children(|col| {
         for (key, title) in &topics {
             col.spawn((
-                DialogueTopicButton {
-                    topic: key.clone(),
-                },
+                DialogueTopicButton { topic: key.clone() },
                 Button,
                 Node {
                     padding: UiRect::axes(Val::Px(4.0), Val::Px(3.0)),
@@ -1168,9 +1228,12 @@ fn spawn_dialogue(
                         .id();
 
                     // Initial hypertext
-                    panel.commands().entity(content_entity).with_children(|col| {
-                        col.spawn_hypertext(&hypertext_cfg, &text);
-                    });
+                    panel
+                        .commands()
+                        .entity(content_entity)
+                        .with_children(|col| {
+                            col.spawn_hypertext(&hypertext_cfg, &text);
+                        });
 
                     // Scrollbar track
                     let track_entity = panel
@@ -1211,8 +1274,14 @@ fn spawn_dialogue(
                         .id();
 
                     // Assemble scroll: wrapper → [scroll → [content], track → [thumb]]
-                    panel.commands().entity(scroll_entity).add_child(content_entity);
-                    panel.commands().entity(track_entity).add_child(thumb_entity);
+                    panel
+                        .commands()
+                        .entity(scroll_entity)
+                        .add_child(content_entity);
+                    panel
+                        .commands()
+                        .entity(track_entity)
+                        .add_child(thumb_entity);
                     panel
                         .commands()
                         .entity(scroll_wrapper)
@@ -1256,7 +1325,8 @@ fn spawn_dialogue(
                                     ..default()
                                 },
                                 ScrollView {
-                                    direction: crate::widgets::scroll_view::ScrollDirection::Vertical,
+                                    direction:
+                                        crate::widgets::scroll_view::ScrollDirection::Vertical,
                                     scroll_speed: 30.0,
                                 },
                                 ScrollPosition::default(),
@@ -1278,9 +1348,7 @@ fn spawn_dialogue(
 
                             for (key, title) in &topics_owned {
                                 col.spawn((
-                                    DialogueTopicButton {
-                                        topic: key.clone(),
-                                    },
+                                    DialogueTopicButton { topic: key.clone() },
                                     Button,
                                     Node {
                                         padding: UiRect::axes(Val::Px(4.0), Val::Px(3.0)),
@@ -1332,8 +1400,52 @@ fn spawn_dialogue(
                         })
                         .id();
                     panel.commands().entity(left_col).add_child(choices_row);
+
+                    // Close ("Goodbye") button — a direct child of the panel, below
+                    // the main row, pinned to the right (align_self on the panel's
+                    // column cross-axis). Emits DialogueCloseRequested on click.
+                    if config.show_close_button {
+                        let close_font = config
+                            .hypertext
+                            .font_size
+                            .unwrap_or_else(|| config.choice_role.size());
+                        panel
+                            .spawn((
+                                DialogueCloseButton,
+                                Button,
+                                Node {
+                                    align_self: AlignSelf::FlexEnd,
+                                    flex_shrink: 0.0,
+                                    padding: UiRect::axes(Val::Px(16.0), Val::Px(7.0)),
+                                    border: UiRect::all(Val::Px(1.0)),
+                                    margin: UiRect::top(Val::Px(10.0)),
+                                    ..default()
+                                },
+                                BackgroundColor(config.choice_bg),
+                                BorderColor(config.choice_border),
+                                BorderRadius::all(Val::Px(config.choice_border_radius)),
+                                InteractiveVisual,
+                                // Match the choice-button palette (hover/press feedback).
+                                VisualStyle::new(
+                                    config.choice_bg,
+                                    config.choice_bg_hover,
+                                    config.choice_bg_pressed,
+                                    config.choice_bg_disabled,
+                                ),
+                            ))
+                            .with_children(|btn| {
+                                btn.spawn((
+                                    Text::new(config.close_button_label.clone()),
+                                    TextFont {
+                                        font_size: close_font,
+                                        ..default()
+                                    },
+                                    TextColor(config.choice_text_color),
+                                    crate::core::UiThemedText,
+                                ));
+                            });
+                    }
                 });
         })
         .id()
 }
-

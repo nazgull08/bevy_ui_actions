@@ -112,8 +112,7 @@ fn setup(
                 })
                 .with_children(|col| {
                     col.ui_text(TextRole::Label, "Drag to rotate");
-                    col.spawn(Node::default())
-                        .add_child(handle1.ui_entity);
+                    col.spawn(Node::default()).add_child(handle1.ui_entity);
                 });
 
                 // Right: auto-rotating viewport
@@ -125,8 +124,7 @@ fn setup(
                 })
                 .with_children(|col| {
                     col.ui_text(TextRole::Label, "Auto-rotate");
-                    col.spawn(Node::default())
-                        .add_child(handle2.ui_entity);
+                    col.spawn(Node::default()).add_child(handle2.ui_entity);
                 });
             });
         });

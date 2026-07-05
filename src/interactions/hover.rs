@@ -94,7 +94,10 @@ pub(crate) fn handle_hover_actions(
 
 /// System: fires [`OnHoverExit`] when leaving `Interaction::Hovered`.
 pub(crate) fn handle_hover_exit_actions(
-    mut query: Query<(Entity, &Interaction, &mut PreviousInteraction, &OnHoverExit), Without<Disabled>>,
+    mut query: Query<
+        (Entity, &Interaction, &mut PreviousInteraction, &OnHoverExit),
+        Without<Disabled>,
+    >,
     scope: Option<Res<UiInputScope>>,
     parents: Query<&ChildOf>,
     mut commands: Commands,

@@ -147,7 +147,10 @@ impl ListViewItems {
     }
 
     /// Add a list item. The callback defines the item's visual content.
-    pub fn item(&mut self, content: impl FnOnce(&mut ChildSpawnerCommands) + Send + Sync + 'static) {
+    pub fn item(
+        &mut self,
+        content: impl FnOnce(&mut ChildSpawnerCommands) + Send + Sync + 'static,
+    ) {
         self.items.push(ListViewItemDef {
             content: Box::new(content),
         });
@@ -171,46 +174,45 @@ impl SpawnListViewExt for ChildSpawnerCommands<'_> {
         let show_scrollbar = scroll_config.show_scrollbar;
 
         // Helper: spawn items into a column container
-        let spawn_items =
-            move |parent: &mut ChildSpawnerCommands,
-                  list_entity: Entity,
-                  items: Vec<ListViewItemDef>| {
-                parent
-                    .spawn(Node {
-                        width: Val::Percent(100.0),
-                        flex_direction: FlexDirection::Column,
-                        row_gap: Val::Px(item_gap),
-                        ..default()
-                    })
-                    .with_children(|col| {
-                        for (index, item_def) in items.into_iter().enumerate() {
-                            let style = item_style.clone();
-                            col.spawn((
-                                Node {
-                                    width: Val::Percent(100.0),
-                                    padding: UiRect::all(Val::Px(8.0)),
-                                    ..default()
-                                },
-                                BackgroundColor(style.normal),
-                                InteractiveVisual,
-                                style,
-                                ListItem {
-                                    index,
-                                    list: list_entity,
-                                },
-                                // Placeholder OnClick — will be fixed up
-                                OnClick::new(SelectListItemAction {
-                                    item_entity: Entity::PLACEHOLDER,
-                                    list_entity,
-                                    index,
-                                    mode: selection_mode,
-                                }),
-                                Interaction::None,
-                            ))
-                            .with_children(item_def.content);
-                        }
-                    });
-            };
+        let spawn_items = move |parent: &mut ChildSpawnerCommands,
+                                list_entity: Entity,
+                                items: Vec<ListViewItemDef>| {
+            parent
+                .spawn(Node {
+                    width: Val::Percent(100.0),
+                    flex_direction: FlexDirection::Column,
+                    row_gap: Val::Px(item_gap),
+                    ..default()
+                })
+                .with_children(|col| {
+                    for (index, item_def) in items.into_iter().enumerate() {
+                        let style = item_style.clone();
+                        col.spawn((
+                            Node {
+                                width: Val::Percent(100.0),
+                                padding: UiRect::all(Val::Px(8.0)),
+                                ..default()
+                            },
+                            BackgroundColor(style.normal),
+                            InteractiveVisual,
+                            style,
+                            ListItem {
+                                index,
+                                list: list_entity,
+                            },
+                            // Placeholder OnClick — will be fixed up
+                            OnClick::new(SelectListItemAction {
+                                item_entity: Entity::PLACEHOLDER,
+                                list_entity,
+                                index,
+                                mode: selection_mode,
+                            }),
+                            Interaction::None,
+                        ))
+                        .with_children(item_def.content);
+                    }
+                });
+        };
 
         let item_defs = items.items;
 
@@ -267,12 +269,14 @@ fn fix_list_references(world: &mut World, list_entity: Entity, mode: SelectionMo
         if let Some(mut item) = world.get_mut::<ListItem>(*entity) {
             item.list = list_entity;
         }
-        world.entity_mut(*entity).insert(OnClick::new(SelectListItemAction {
-            item_entity: *entity,
-            list_entity,
-            index: *index,
-            mode,
-        }));
+        world
+            .entity_mut(*entity)
+            .insert(OnClick::new(SelectListItemAction {
+                item_entity: *entity,
+                list_entity,
+                index: *index,
+                mode,
+            }));
     }
 }
 
@@ -286,11 +290,13 @@ fn fix_onclick_entities(world: &mut World, list_entity: Entity, mode: SelectionM
         }
     }
     for (entity, index) in &items {
-        world.entity_mut(*entity).insert(OnClick::new(SelectListItemAction {
-            item_entity: *entity,
-            list_entity,
-            index: *index,
-            mode,
-        }));
+        world
+            .entity_mut(*entity)
+            .insert(OnClick::new(SelectListItemAction {
+                item_entity: *entity,
+                list_entity,
+                index: *index,
+                mode,
+            }));
     }
 }

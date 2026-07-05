@@ -56,7 +56,11 @@ pub fn spawn_tab_panel(
     parent
         .spawn((
             Node {
-                display: if visible { Display::Flex } else { Display::None },
+                display: if visible {
+                    Display::Flex
+                } else {
+                    Display::None
+                },
                 width: Val::Percent(100.0),
                 flex_grow: 1.0,
                 min_height: Val::Px(0.0),

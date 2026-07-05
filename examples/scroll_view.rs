@@ -29,116 +29,117 @@ struct SelectionInfoText;
 fn setup(mut commands: Commands) {
     commands.spawn(Camera2d);
 
-    commands
-        .spawn(Node::centered(20.0))
-        .with_children(|root| {
-            root.ui_text(TextRole::Heading, "ScrollView + Tabs Example");
+    commands.spawn(Node::centered(20.0)).with_children(|root| {
+        root.ui_text(TextRole::Heading, "ScrollView + Tabs Example");
 
-            // Tab container
-            root.spawn((
-                Node {
-                    flex_direction: FlexDirection::Column,
-                    width: Val::Px(500.0),
+        // Tab container
+        root.spawn((
+            Node {
+                flex_direction: FlexDirection::Column,
+                width: Val::Px(500.0),
+                ..default()
+            },
+            TabGroup::new(0),
+        ))
+        .with_children(|tab_group| {
+            // Tab buttons
+            tab_group
+                .spawn(Node {
+                    flex_direction: FlexDirection::Row,
                     ..default()
-                },
-                TabGroup::new(0),
-            ))
-            .with_children(|tab_group| {
-                // Tab buttons
-                tab_group
-                    .spawn(Node {
-                        flex_direction: FlexDirection::Row,
+                })
+                .with_children(|row| {
+                    spawn_tab_button(row, 0, "Inventory", true);
+                    spawn_tab_button(row, 1, "Quests", false);
+                    spawn_tab_button(row, 2, "Actions", false);
+                });
+
+            // Tab 0: Inventory — ListView with selection
+            spawn_tab_panel(tab_group, 0, true, |panel| {
+                panel.spawn_list_view(
+                    ListViewConfig {
+                        scroll: ScrollViewConfig {
+                            width: Val::Percent(100.0),
+                            height: Val::Px(280.0),
+                            show_scrollbar: true,
+                            ..default()
+                        },
+                        selection_mode: SelectionMode::Single,
                         ..default()
-                    })
-                    .with_children(|row| {
-                        spawn_tab_button(row, 0, "Inventory", true);
-                        spawn_tab_button(row, 1, "Quests", false);
-                        spawn_tab_button(row, 2, "Actions", false);
-                    });
-
-                // Tab 0: Inventory — ListView with selection
-                spawn_tab_panel(tab_group, 0, true, |panel| {
-                    panel.spawn_list_view(
-                        ListViewConfig {
-                            scroll: ScrollViewConfig {
-                                width: Val::Percent(100.0),
-                                height: Val::Px(280.0),
-                                show_scrollbar: true,
-                                ..default()
-                            },
-                            selection_mode: SelectionMode::Single,
-                            ..default()
-                        },
-                        |list| {
-                            for item in ITEMS.iter() {
-                                let name = item.0;
-                                let desc = item.1;
-                                list.item(move |row| {
-                                    row.spawn(Node {
-                                        flex_direction: FlexDirection::Column,
-                                        row_gap: Val::Px(2.0),
-                                        ..default()
-                                    })
-                                    .with_children(|col| {
-                                        col.ui_text(TextRole::Button, name);
-                                        col.ui_text(TextRole::Caption, desc);
-                                    });
+                    },
+                    |list| {
+                        for item in ITEMS.iter() {
+                            let name = item.0;
+                            let desc = item.1;
+                            list.item(move |row| {
+                                row.spawn(Node {
+                                    flex_direction: FlexDirection::Column,
+                                    row_gap: Val::Px(2.0),
+                                    ..default()
+                                })
+                                .with_children(|col| {
+                                    col.ui_text(TextRole::Button, name);
+                                    col.ui_text(TextRole::Caption, desc);
                                 });
-                            }
-                        },
-                    );
-                });
-
-                // Tab 1: Quests — ScrollView with panels
-                spawn_tab_panel(tab_group, 1, false, |panel| {
-                    panel.spawn_scroll_view_with(
-                        ScrollViewConfig {
-                            width: Val::Percent(100.0),
-                            height: Val::Px(280.0),
-                            show_scrollbar: true,
-                            ..default()
-                        },
-                        |scroll| {
-                            for (title, desc) in QUESTS {
-                                scroll
-                                    .spawn_panel(PanelConfig {
-                                        background: Color::srgb(0.14, 0.14, 0.17),
-                                        border_color: Color::srgb(0.25, 0.25, 0.30),
-                                        ..PanelConfig::dark()
-                                    })
-                                    .with_children(|quest| {
-                                        quest.ui_text(TextRole::Button, *title);
-                                        quest.ui_text(TextRole::Body, *desc);
-                                    });
-                            }
-                        },
-                    );
-                });
-
-                // Tab 2: Actions — clickable buttons inside scroll
-                spawn_tab_panel(tab_group, 2, false, |panel| {
-                    panel.spawn_scroll_view_with(
-                        ScrollViewConfig {
-                            width: Val::Percent(100.0),
-                            height: Val::Px(280.0),
-                            show_scrollbar: true,
-                            ..default()
-                        },
-                        |scroll| {
-                            for i in 0..12 {
-                                spawn_action_button(scroll, i);
-                            }
-                        },
-                    );
-                });
+                            });
+                        }
+                    },
+                );
             });
 
-            // Selection info
-            root.ui_text(TextRole::Body, "Select an item in Inventory tab")
-                .insert(SelectionInfoText);
+            // Tab 1: Quests — ScrollView with panels
+            spawn_tab_panel(tab_group, 1, false, |panel| {
+                panel.spawn_scroll_view_with(
+                    ScrollViewConfig {
+                        width: Val::Percent(100.0),
+                        height: Val::Px(280.0),
+                        show_scrollbar: true,
+                        ..default()
+                    },
+                    |scroll| {
+                        for (title, desc) in QUESTS {
+                            scroll
+                                .spawn_panel(PanelConfig {
+                                    background: Color::srgb(0.14, 0.14, 0.17),
+                                    border_color: Color::srgb(0.25, 0.25, 0.30),
+                                    ..PanelConfig::dark()
+                                })
+                                .with_children(|quest| {
+                                    quest.ui_text(TextRole::Button, *title);
+                                    quest.ui_text(TextRole::Body, *desc);
+                                });
+                        }
+                    },
+                );
+            });
 
-            root.ui_text(TextRole::Caption, "Tabs switch content. Each tab has a scrollable area.");
+            // Tab 2: Actions — clickable buttons inside scroll
+            spawn_tab_panel(tab_group, 2, false, |panel| {
+                panel.spawn_scroll_view_with(
+                    ScrollViewConfig {
+                        width: Val::Percent(100.0),
+                        height: Val::Px(280.0),
+                        show_scrollbar: true,
+                        ..default()
+                    },
+                    |scroll| {
+                        for i in 0..12 {
+                            spawn_action_button(scroll, i);
+                        }
+                    },
+                );
+            });
         });
+
+        // Selection info
+        root.ui_text(TextRole::Body, "Select an item in Inventory tab")
+            .insert(SelectionInfoText);
+
+        root.ui_text(
+            TextRole::Caption,
+            "Tabs switch content. Each tab has a scrollable area.",
+        );
+    });
 }
 
 // ============ Tab helpers ============
@@ -189,7 +190,11 @@ fn spawn_tab_panel(
     parent
         .spawn((
             Node {
-                display: if visible { Display::Flex } else { Display::None },
+                display: if visible {
+                    Display::Flex
+                } else {
+                    Display::None
+                },
                 width: Val::Percent(100.0),
                 padding: UiRect::all(Val::Px(10.0)),
                 flex_direction: FlexDirection::Column,
@@ -273,12 +278,36 @@ const ITEMS: &[(&str, &str)] = &[
 ];
 
 const QUESTS: &[(&str, &str)] = &[
-    ("The Lost Sword", "Find the ancient blade hidden deep in the dungeon."),
-    ("Spider Infestation", "Clear the spider nest in the lower caves."),
-    ("Deliver the Message", "Bring the sealed letter to the guard captain."),
-    ("Gather Herbs", "Collect 5 moonflower petals from the garden terrace."),
-    ("The Missing Guard", "Investigate the disappearance of the night watch."),
-    ("Ancient Mechanism", "Discover how to operate the strange device."),
-    ("Repair the Bridge", "Find materials to fix the collapsed bridge."),
-    ("The Sealed Door", "Find a way to open the sealed door in the cathedral."),
+    (
+        "The Lost Sword",
+        "Find the ancient blade hidden deep in the dungeon.",
+    ),
+    (
+        "Spider Infestation",
+        "Clear the spider nest in the lower caves.",
+    ),
+    (
+        "Deliver the Message",
+        "Bring the sealed letter to the guard captain.",
+    ),
+    (
+        "Gather Herbs",
+        "Collect 5 moonflower petals from the garden terrace.",
+    ),
+    (
+        "The Missing Guard",
+        "Investigate the disappearance of the night watch.",
+    ),
+    (
+        "Ancient Mechanism",
+        "Discover how to operate the strange device.",
+    ),
+    (
+        "Repair the Bridge",
+        "Find materials to fix the collapsed bridge.",
+    ),
+    (
+        "The Sealed Door",
+        "Find a way to open the sealed door in the cathedral.",
+    ),
 ];

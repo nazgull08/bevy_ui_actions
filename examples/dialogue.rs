@@ -8,6 +8,7 @@
 //! - Topic-nodes flow: opening the "Sealed Vaults" topic presents answer choices
 //!   (SetDialogueChoices); picking one clears them (DialogueChoiceSelected)
 //! - ESC to dismiss, auto-scroll on append
+//! - "Goodbye" close button (bottom-right) → DialogueCloseRequested → dismiss
 //!
 //! Run: `cargo run --example dialogue -p bevy_ui_actions`
 
@@ -139,6 +140,9 @@ impl UiAction for OpenDialogue {
                     ..default()
                 },
                 height: Val::Px(460.0),
+                // Show the bottom-right "Goodbye" button. Clicking it emits
+                // DialogueCloseRequested; the library's default handler dismisses.
+                show_close_button: true,
                 ..default()
             }),
         );

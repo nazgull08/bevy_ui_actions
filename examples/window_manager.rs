@@ -71,8 +71,7 @@ fn setup(mut commands: Commands) {
     );
 
     commands.spawn_window(
-        WindowConfig::new("Log", Vec2::new(180.0, 280.0))
-            .with_size(Val::Px(320.0), Val::Px(180.0)),
+        WindowConfig::new("Log", Vec2::new(180.0, 280.0)).with_size(Val::Px(320.0), Val::Px(180.0)),
         |c| {
             c.ui_text(TextRole::Body, "Welcome to the window manager demo.");
             c.ui_text(TextRole::Body, "These three windows overlap.");

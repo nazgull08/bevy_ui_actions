@@ -96,40 +96,41 @@ impl UiAction for SelectSlotAction {
 fn setup(mut commands: Commands) {
     commands.spawn(Camera2d);
 
-    commands
-        .spawn(Node::centered(30.0))
-        .with_children(|root| {
-            root.ui_text(TextRole::Heading, "Selection + BorderStyle Example");
-            root.ui_text(TextRole::Label, "Click slots to select. Click again to deselect.");
+    commands.spawn(Node::centered(30.0)).with_children(|root| {
+        root.ui_text(TextRole::Heading, "Selection + BorderStyle Example");
+        root.ui_text(
+            TextRole::Label,
+            "Click slots to select. Click again to deselect.",
+        );
 
-            // Slot grid
-            root.spawn(Node {
-                display: Display::Grid,
-                grid_template_columns: vec![GridTrack::px(80.0); 4],
-                grid_template_rows: vec![GridTrack::px(80.0); 2],
-                row_gap: Val::Px(8.0),
-                column_gap: Val::Px(8.0),
-                ..default()
-            })
-            .with_children(|grid| {
-                for i in 0..8 {
-                    let has_item = i < 3;
-                    spawn_slot(grid, i, has_item);
-                }
-            });
-
-            // Selection info panel
-            root.spawn_panel(PanelConfig {
-                min_width: Val::Px(300.0),
-                min_height: Val::Px(80.0),
-                ..PanelConfig::dark()
-            })
-            .with_children(|panel| {
-                panel
-                    .ui_text(TextRole::Body, "No slot selected")
-                    .insert(SelectionInfoText);
-            });
+        // Slot grid
+        root.spawn(Node {
+            display: Display::Grid,
+            grid_template_columns: vec![GridTrack::px(80.0); 4],
+            grid_template_rows: vec![GridTrack::px(80.0); 2],
+            row_gap: Val::Px(8.0),
+            column_gap: Val::Px(8.0),
+            ..default()
+        })
+        .with_children(|grid| {
+            for i in 0..8 {
+                let has_item = i < 3;
+                spawn_slot(grid, i, has_item);
+            }
         });
+
+        // Selection info panel
+        root.spawn_panel(PanelConfig {
+            min_width: Val::Px(300.0),
+            min_height: Val::Px(80.0),
+            ..PanelConfig::dark()
+        })
+        .with_children(|panel| {
+            panel
+                .ui_text(TextRole::Body, "No slot selected")
+                .insert(SelectionInfoText);
+        });
+    });
 }
 
 fn spawn_slot(parent: &mut ChildSpawnerCommands, index: usize, has_item: bool) {

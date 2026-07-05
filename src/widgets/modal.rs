@@ -177,7 +177,6 @@ pub struct ModalPanel;
 #[derive(Component)]
 pub(crate) struct ModalLayoutPending;
 
-
 // ============================================================
 // Public Helpers
 // ============================================================
@@ -314,7 +313,6 @@ fn spawn_modal(commands: &mut Commands, style: &ModalStyle, request: ModalReques
     modal_entity
 }
 
-
 /// Reveals modals once panel size has stabilized (prevents size pop).
 ///
 /// Waits until the `ModalPanel`'s `ComputedNode` size is non-zero and
@@ -346,7 +344,6 @@ pub(crate) fn reveal_modal_panel(
         }
     }
 }
-
 
 /// Handles ESC key and backdrop clicks to dismiss modal.
 pub(crate) fn handle_modal_dismiss(

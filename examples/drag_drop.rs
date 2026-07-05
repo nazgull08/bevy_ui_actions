@@ -68,24 +68,23 @@ fn setup(mut commands: Commands) {
             parent.ui_text(TextRole::Heading, "Drag & Drop Example");
 
             // Draggable items row
-            parent
-                .spawn(Node::row(20.0))
-                .with_children(|row| {
-                    spawn_draggable_item(row, "Item A", Color::srgb(0.8, 0.3, 0.3));
-                    spawn_draggable_item(row, "Item B", Color::srgb(0.3, 0.8, 0.3));
-                    spawn_draggable_item(row, "Item C", Color::srgb(0.3, 0.3, 0.8));
-                });
+            parent.spawn(Node::row(20.0)).with_children(|row| {
+                spawn_draggable_item(row, "Item A", Color::srgb(0.8, 0.3, 0.3));
+                spawn_draggable_item(row, "Item B", Color::srgb(0.3, 0.8, 0.3));
+                spawn_draggable_item(row, "Item C", Color::srgb(0.3, 0.3, 0.8));
+            });
 
             // Drop targets row
-            parent
-                .spawn(Node::row(20.0))
-                .with_children(|row| {
-                    for i in 0..4 {
-                        spawn_drop_slot(row, i);
-                    }
-                });
+            parent.spawn(Node::row(20.0)).with_children(|row| {
+                for i in 0..4 {
+                    spawn_drop_slot(row, i);
+                }
+            });
 
-            parent.ui_text(TextRole::Caption, "Drag items to slots. Check console for logs.");
+            parent.ui_text(
+                TextRole::Caption,
+                "Drag items to slots. Check console for logs.",
+            );
         });
 }
 

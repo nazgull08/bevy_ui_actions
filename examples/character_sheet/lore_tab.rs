@@ -1,8 +1,6 @@
 use bevy::prelude::*;
 use bevy_ui_actions::prelude::*;
 
-
-
 pub fn setup_lore_registry(commands: &mut Commands) {
     let mut registry = TopicRegistry::default();
 
