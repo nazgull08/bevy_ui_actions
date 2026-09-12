@@ -17,6 +17,7 @@
 //! - **[`InteractiveVisual`]** — hover/press/selected/disabled color states
 //! - **[`PanelConfig`]** — styled panels with presets (`dark`, `overlay`, `sidebar`)
 //! - **[`ScrollViewConfig`]** — scrollable containers with scrollbar
+//! - **[`Slider`]** — horizontal value slider (drag thumb / click track, optional step snap)
 //! - **[`ListViewConfig`]** — selectable item lists
 //! - **[`ModalQueue`]** / **[`ModalRequest`]** — modal dialogs with backdrop + ESC dismiss
 //! - **[`HyperText`]** — inline clickable links with glyph-level hit-testing
@@ -92,8 +93,10 @@ pub use widgets::{
     ListView, ListViewConfig, ListViewItems, Modal, ModalBackdrop, ModalPanel, ModalQueue,
     ModalRequest, ModalStyle, PanelConfig, ProgressBar, ProgressBarConfig, ProgressBarFill,
     ScrollDirection, ScrollView, ScrollViewConfig, Selected, SelectionMode, SetDialogueChoices,
-    Slot, SlotGridConfig, SpawnHyperTextExt, SpawnListViewExt, SpawnPanelExt, SpawnProgressBarExt,
-    SpawnScrollViewExt, SpawnSlotGridExt, SpawnWindowExt, StatDiff, Tab, TabContent, TabGroup,
+    Slider, SliderChanged, SliderConfig, SliderDragState, SliderFill, SliderThumb, Slot,
+    SlotGridConfig, SpawnHyperTextExt, SpawnListViewExt, SpawnPanelExt, SpawnProgressBarExt,
+    SpawnScrollViewExt, SpawnSliderExt, SpawnSlotGridExt, SpawnWindowExt, StatDiff, Tab,
+    TabContent, TabGroup,
     Tooltip, TooltipBuilder, TooltipContent, TooltipSection, TooltipSet, TooltipState,
     TooltipStyle, TooltipUI, TopicContainer, TopicDiscovered, TopicEntry, TopicRegistry, UiWindow,
     VisualStyle, WindowClosable, WindowCloseButton, WindowConfig, WindowContent, WindowDrag,

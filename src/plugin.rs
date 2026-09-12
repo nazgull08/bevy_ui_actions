@@ -10,18 +10,19 @@ use crate::widgets::{
     handle_dialogue_close_input, handle_dialogue_dismiss_event, handle_dismiss_event,
     handle_modal_dismiss, handle_scroll_input, handle_scrollbar_drag, handle_tab_clicks,
     handle_topic_container, handle_topic_panel_clicks, handle_track_click, has_dialogue,
-    has_hypertext, has_scroll_views, hide_tooltip, hypertext_click, hypertext_hover,
+    has_hypertext, has_scroll_views, has_sliders, hide_tooltip, hypertext_click, hypertext_hover,
     process_dialogue_queue, process_modal_queue, register_windows, reveal_modal_panel,
-    should_hide_tooltip, should_show_tooltip, show_tooltip, sync_active_tab_marker,
+    should_hide_tooltip, should_show_tooltip, show_tooltip, slider_drag, sync_active_tab_marker,
     sync_tab_content_visibility, track_active_topic, update_border_visuals,
     update_choice_button_visuals, update_interactive_visuals, update_progress_bars,
-    update_scrollbar_thumb, update_tooltip_hover, update_topic_button_colors, update_topic_panel,
-    update_visited_link_colors, window_close_on_escape, window_close_system, window_focus_system,
-    window_move_system, ActiveTopic, AppendDialogueText, DialogueChoiceSelected,
-    DialogueCloseRequested, DialogueQueue, DialogueStyle, DialogueTopicsLocked,
-    DismissDialogueEvent, DismissModalEvent, HyperLinkClicked, ListItemSelected, ModalQueue,
-    ModalStyle, ScrollbarDragState, SetDialogueChoices, TooltipSet, TooltipState, TooltipStyle,
-    TopicDiscovered, WindowDragState, WindowManager,
+    update_scrollbar_thumb, update_slider_visuals, update_tooltip_hover,
+    update_topic_button_colors, update_topic_panel, update_visited_link_colors,
+    window_close_on_escape, window_close_system, window_focus_system, window_move_system,
+    ActiveTopic, AppendDialogueText, DialogueChoiceSelected, DialogueCloseRequested, DialogueQueue,
+    DialogueStyle, DialogueTopicsLocked, DismissDialogueEvent, DismissModalEvent, HyperLinkClicked,
+    ListItemSelected, ModalQueue, ModalStyle, ScrollbarDragState, SetDialogueChoices,
+    SliderChanged, SliderDragState, TooltipSet, TooltipState, TooltipStyle, TopicDiscovered,
+    WindowDragState, WindowManager,
 };
 #[cfg(feature = "viewport3d")]
 use crate::widgets::{
@@ -43,6 +44,7 @@ impl Plugin for UiActionsPlugin {
             .init_resource::<ScrollbarDragState>()
             .init_resource::<ModalStyle>()
             .init_resource::<ModalQueue>()
+            .init_resource::<SliderDragState>()
             .init_resource::<WindowDragState>()
             .init_resource::<WindowManager>()
             .init_resource::<DialogueQueue>()
@@ -50,6 +52,7 @@ impl Plugin for UiActionsPlugin {
             .init_resource::<ActiveTopic>()
             .init_resource::<DialogueTopicsLocked>()
             .add_event::<ListItemSelected>()
+            .add_event::<SliderChanged>()
             .add_event::<DismissModalEvent>()
             .add_event::<DismissDialogueEvent>()
             .add_event::<DialogueChoiceSelected>()
@@ -107,6 +110,10 @@ impl Plugin for UiActionsPlugin {
                     )
                         .chain()
                         .run_if(has_scroll_views),
+                    // Slider: drag first, then visuals pick up the value.
+                    (slider_drag, update_slider_visuals)
+                        .chain()
+                        .run_if(has_sliders),
                     // Tabs
                     (
                         handle_tab_clicks,

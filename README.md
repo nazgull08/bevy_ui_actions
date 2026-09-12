@@ -23,6 +23,7 @@ Instead of matching `Interaction` changes in every system, define **action struc
 - **Visual feedback** — `InteractiveVisual` auto-colors on hover/press/select/disable
 - **Panels** — styled containers with presets (`dark`, `overlay`, `sidebar`)
 - **Scroll views** — scrollable containers with scrollbar (thumb drag + track click)
+- **Sliders** — horizontal value slider: thumb drag / track click, `min..=max` + optional step snap, `SliderChanged` events, echo-free programmatic set
 - **List views** — selectable item lists (`None` / `Single` selection)
 - **Floating windows** — `spawn_window` movable/closable windows; title-bar drag, click-to-front z-order, `Escape` to close, on-screen clamp
 - **Slot grids** — `spawn_slot_grid` + `Slot { container, index }` + `dragged_slot`; container-agnostic drag&drop slots (inventories, chests)
@@ -105,6 +106,33 @@ queue.show(
 );
 ```
 
+## Sliders
+
+```rust
+// Track + draggable thumb; click anywhere on the track to jump.
+fn setup_row(row: &mut ChildSpawnerCommands) {
+    let slider = row.spawn_slider(SliderConfig {
+        min: 0.0,
+        max: 255.0,
+        initial: 90.0,
+        step: 1.0, // snap; 0.0 = continuous
+        ..default()
+    });
+    // Tag it with your own marker to identify it in the event handler.
+    row.commands().entity(slider).insert(RedChannel);
+}
+
+// User drags → SliderChanged { slider, value }.
+fn apply(mut events: EventReader<SliderChanged>, tagged: Query<&RedChannel>) {
+    for e in events.read() {
+        if tagged.get(e.slider).is_ok() { /* use e.value */ }
+    }
+}
+
+// Code writes move the thumb WITHOUT emitting (no event echo):
+// slider.set(defaults.red);
+```
+
 ## Floating windows
 
 ```rust
@@ -162,6 +190,7 @@ cargo run --example right_click      # Left + right click actions
 cargo run --example selection        # Grid selection with BorderStyle
 cargo run --example tabs             # Tab switching
 cargo run --example scroll_view      # Scrollable content
+cargo run --example slider           # RGB mixer + tuning row (slider + fine buttons)
 cargo run --example modal            # Modal dialogs
 cargo run --example window_manager   # Floating windows: drag, focus, close
 cargo run --example container_transfer # Two inventory windows + drag&drop slots

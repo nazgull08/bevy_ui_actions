@@ -1,6 +1,6 @@
 [package]
 name = "bevy_ui_actions"
-version = "0.2.6"
+version = "0.2.7"
 edition = "2021"
 license = "MIT"
 description = "Action-driven UI toolkit for Bevy — clicks, drag-drop, tooltips, tabs, scroll views, modals, dialogue system, 3D viewports"
@@ -75,6 +75,10 @@ path = "examples/scroll_view.rs"
 [[example]]
 name = "selection"
 path = "examples/selection.rs"
+
+[[example]]
+name = "slider"
+path = "examples/slider.rs"
 
 [[example]]
 name = "modal"

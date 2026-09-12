@@ -5,6 +5,7 @@ mod modal;
 mod panel;
 mod progress_bar;
 mod scroll_view;
+mod slider;
 mod slot;
 mod tabs;
 mod tooltip;
@@ -38,6 +39,9 @@ pub use progress_bar::{ProgressBar, ProgressBarConfig, ProgressBarFill, SpawnPro
 pub use scroll_view::{
     ScrollDirection, ScrollView, ScrollViewConfig, ScrollbarDragState, ScrollbarThumb,
     ScrollbarTrack, SpawnScrollViewExt, StickToBottom,
+};
+pub use slider::{
+    Slider, SliderChanged, SliderConfig, SliderDragState, SliderFill, SliderThumb, SpawnSliderExt,
 };
 pub use tabs::{Tab, TabContent, TabGroup};
 pub use tooltip::{
@@ -78,6 +82,7 @@ pub(crate) use scroll_view::{
     clamp_scroll_bounds, handle_scroll_input, handle_scrollbar_drag, handle_track_click,
     has_scroll_views, update_scrollbar_thumb,
 };
+pub(crate) use slider::{has_sliders, slider_drag, update_slider_visuals};
 pub(crate) use tabs::{handle_tab_clicks, sync_active_tab_marker, sync_tab_content_visibility};
 pub(crate) use tooltip::{
     hide_tooltip, should_hide_tooltip, should_show_tooltip, show_tooltip, update_tooltip_hover,
