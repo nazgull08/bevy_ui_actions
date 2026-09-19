@@ -82,11 +82,10 @@ pub(crate) fn handle_hover_actions(
 ) {
     for (entity, interaction, on_hover) in &query {
         if *interaction == Interaction::Hovered {
-            if let Some(ref scope) = scope {
-                if !is_in_scope(entity, scope, &parents) {
+            if let Some(ref scope) = scope
+                && !is_in_scope(entity, scope, &parents) {
                     continue;
                 }
-            }
             on_hover.execute(&mut commands);
         }
     }
@@ -108,11 +107,10 @@ pub(crate) fn handle_hover_exit_actions(
         prev.0 = *interaction;
 
         if was_hovered && !is_hovered {
-            if let Some(ref scope) = scope {
-                if !is_in_scope(entity, scope, &parents) {
+            if let Some(ref scope) = scope
+                && !is_in_scope(entity, scope, &parents) {
                     continue;
                 }
-            }
             on_hover_exit.execute(&mut commands);
         }
     }
@@ -128,11 +126,10 @@ pub(crate) fn handle_press_actions(
 ) {
     for (entity, interaction, on_press) in &query {
         if *interaction == Interaction::Pressed {
-            if let Some(ref scope) = scope {
-                if !is_in_scope(entity, scope, &parents) {
+            if let Some(ref scope) = scope
+                && !is_in_scope(entity, scope, &parents) {
                     continue;
                 }
-            }
             on_press.execute(&mut commands);
         }
     }

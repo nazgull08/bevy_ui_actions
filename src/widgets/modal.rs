@@ -146,7 +146,7 @@ impl ModalQueue {
 }
 
 /// Event: dismiss the current modal.
-#[derive(Event)]
+#[derive(Message)]
 pub struct DismissModalEvent {
     /// If true, fires on_confirm action. If false, fires on_cancel.
     pub confirmed: bool,
@@ -188,7 +188,7 @@ pub struct DismissModal(pub bool);
 
 impl UiAction for DismissModal {
     fn execute(&self, world: &mut World) {
-        world.send_event(DismissModalEvent { confirmed: self.0 });
+        world.write_message(DismissModalEvent { confirmed: self.0 });
     }
 }
 
@@ -264,7 +264,9 @@ fn spawn_modal(commands: &mut Commands, style: &ModalStyle, request: ModalReques
     let dismissable = request.dismissable;
     let content = request.content;
 
-    let modal_entity = commands
+    
+
+    commands
         .spawn((
             Modal {
                 on_confirm,
@@ -301,16 +303,14 @@ fn spawn_modal(commands: &mut Commands, style: &ModalStyle, request: ModalReques
                         ..default()
                     },
                     BackgroundColor(style.panel_background),
-                    BorderColor(style.panel_border),
+                    BorderColor::all(style.panel_border),
                     Interaction::None,
                 ))
                 .with_children(|panel| {
                     content(panel, style);
                 });
         })
-        .id();
-
-    modal_entity
+        .id()
 }
 
 /// Reveals modals once panel size has stabilized (prevents size pop).
@@ -351,7 +351,7 @@ pub(crate) fn handle_modal_dismiss(
     backdrop_query: Query<(&Interaction, &Modal), With<ModalBackdrop>>,
     panel_query: Query<&Interaction, With<ModalPanel>>,
     mouse: Res<ButtonInput<MouseButton>>,
-    mut dismiss_events: EventWriter<DismissModalEvent>,
+    mut dismiss_events: MessageWriter<DismissModalEvent>,
 ) {
     // ESC to dismiss
     if keys.just_pressed(KeyCode::Escape) {
@@ -387,7 +387,7 @@ pub(crate) fn handle_modal_dismiss(
 
 /// Processes DismissModalEvent: fires action and despawns.
 pub(crate) fn handle_dismiss_event(
-    mut events: EventReader<DismissModalEvent>,
+    mut events: MessageReader<DismissModalEvent>,
     query: Query<(Entity, &Modal)>,
     mut commands: Commands,
     scope: Option<Res<UiInputScope>>,

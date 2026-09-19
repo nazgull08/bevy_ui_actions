@@ -114,7 +114,7 @@ fn spawn_equip_slot(
             ..default()
         },
         BackgroundColor(bg),
-        BorderColor(EQUIP_DEFAULT_BORDER),
+        BorderColor::all(EQUIP_DEFAULT_BORDER),
         DropTarget,
         OnDrop::new(DropToEquipSlot { target_slot: slot }),
         EquipSlotUI(slot),
@@ -155,7 +155,7 @@ fn spawn_equip_slot(
         s.spawn((
             Text::new(name_str),
             TextFont {
-                font_size: 9.0,
+                font_size: FontSize::Px(9.0),
                 ..default()
             },
             TextColor(Color::srgb(0.85, 0.85, 0.85)),
@@ -257,7 +257,7 @@ fn spawn_inv_slot(
             ..default()
         },
         BackgroundColor(bg),
-        BorderColor(INV_DEFAULT_BORDER),
+        BorderColor::all(INV_DEFAULT_BORDER),
         DropTarget,
         OnDrop::new(DropToInvSlot {
             target_idx: inv_idx,
@@ -299,7 +299,7 @@ fn spawn_inv_slot(
         s.spawn((
             Text::new(name_str),
             TextFont {
-                font_size: 9.0,
+                font_size: FontSize::Px(9.0),
                 ..default()
             },
             TextColor(Color::srgb(0.75, 0.75, 0.75)),
@@ -491,11 +491,10 @@ fn sync_slot_children(
 
     // Icon image (index 0)
     if let Some(&icon_entity) = child_list.first() {
-        if let Ok(mut image) = image_query.get_mut(icon_entity) {
-            if let Some(idx) = item {
+        if let Ok(mut image) = image_query.get_mut(icon_entity)
+            && let Some(idx) = item {
                 image.image = asset_server.load(ITEMS[idx].icon);
             }
-        }
         if let Ok(mut vis) = vis_query.get_mut(icon_entity) {
             *vis = if has_item {
                 Visibility::Visible
@@ -522,15 +521,14 @@ fn sync_slot_children(
     }
 
     // Label (index 2, only equip slots have it)
-    if let Some(&label_entity) = child_list.get(2) {
-        if let Ok(mut vis) = vis_query.get_mut(label_entity) {
+    if let Some(&label_entity) = child_list.get(2)
+        && let Ok(mut vis) = vis_query.get_mut(label_entity) {
             *vis = if has_item {
                 Visibility::Hidden
             } else {
                 Visibility::Visible
             };
         }
-    }
 }
 
 // -- Drag highlight system --
@@ -572,15 +570,15 @@ pub fn highlight_compatible_slots(
             Some(idx) if drag.dragging != Some(entity) => {
                 let compatible = ITEMS[idx].slot == slot_ui.0;
                 if compatible {
-                    border.0 = SLOT_HIGHLIGHT_BORDER;
+                    *border = BorderColor::all(SLOT_HIGHLIGHT_BORDER);
                 } else {
-                    border.0 = EQUIP_DEFAULT_BORDER;
+                    *border = BorderColor::all(EQUIP_DEFAULT_BORDER);
                     bg.0 = SLOT_INCOMPATIBLE_BG;
                     continue;
                 }
             }
             _ => {
-                border.0 = EQUIP_DEFAULT_BORDER;
+                *border = BorderColor::all(EQUIP_DEFAULT_BORDER);
             }
         }
         bg.0 = if has_item {
@@ -595,10 +593,10 @@ pub fn highlight_compatible_slots(
         let has_item = inv.items.get(inv_slot.0).copied().flatten().is_some();
         match item_idx {
             Some(_) if drag.dragging != Some(entity) => {
-                border.0 = SLOT_HIGHLIGHT_BORDER;
+                *border = BorderColor::all(SLOT_HIGHLIGHT_BORDER);
             }
             _ => {
-                border.0 = INV_DEFAULT_BORDER;
+                *border = BorderColor::all(INV_DEFAULT_BORDER);
             }
         }
         bg.0 = if has_item {

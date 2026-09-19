@@ -35,7 +35,7 @@ fn main() {
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: "Character Sheet — bevy_ui_actions showcase".into(),
-                resolution: (1280.0, 720.0).into(),
+                resolution: (1280, 720).into(),
                 ..default()
             }),
             ..default()
@@ -278,8 +278,8 @@ fn sync_attributes(
     for (entity, stat, mut text, mut color) in &mut derived {
         let new_val = stats_tab::derived_value(stat.0, &stats);
         let old_val = old_derived.iter().find(|(k, _)| *k == stat.0);
-        if let Some((_, old)) = old_val {
-            if *old != new_val {
+        if let Some((_, old)) = old_val
+            && *old != new_val {
                 // Parse numeric part for comparison
                 let old_num: f32 = old.trim_end_matches('%').parse().unwrap_or(0.0);
                 let new_num: f32 = new_val.trim_end_matches('%').parse().unwrap_or(0.0);
@@ -294,7 +294,6 @@ fn sync_attributes(
                     color: flash_color,
                 });
             }
-        }
         **text = new_val;
     }
 

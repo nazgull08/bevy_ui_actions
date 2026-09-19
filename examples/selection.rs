@@ -151,7 +151,7 @@ fn spawn_slot(parent: &mut ChildSpawnerCommands, index: usize, has_item: bool) {
                 ..default()
             },
             BackgroundColor(bg_color),
-            BorderColor(Color::srgb(0.35, 0.35, 0.40)),
+            BorderColor::all(Color::srgb(0.35, 0.35, 0.40)),
             Slot { index, has_item },
             InteractiveVisual,
             VisualStyle::slot(),

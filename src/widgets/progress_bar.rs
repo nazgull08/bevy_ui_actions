@@ -105,7 +105,7 @@ impl SpawnProgressBarExt for ChildSpawnerCommands<'_> {
                 ..default()
             },
             BackgroundColor(config.background),
-            BorderColor(config.border_color),
+            BorderColor::all(config.border_color),
             ProgressBar::new(initial_value),
         ))
         .with_children(|parent| {

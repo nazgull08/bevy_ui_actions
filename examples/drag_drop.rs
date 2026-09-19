@@ -123,7 +123,7 @@ fn spawn_drop_slot(parent: &mut ChildSpawnerCommands, index: usize) {
                 ..default()
             },
             BackgroundColor(Color::srgb(0.15, 0.15, 0.15)),
-            BorderColor(Color::srgb(0.4, 0.4, 0.4)),
+            BorderColor::all(Color::srgb(0.4, 0.4, 0.4)),
             DropTarget,
             OnDrop::new(DropIntoSlotAction { slot_index: index }),
         ))

@@ -111,7 +111,7 @@ impl SpawnSlotGridExt for ChildSpawnerCommands<'_> {
                         ..default()
                     },
                     BackgroundColor(background),
-                    BorderColor(border_color),
+                    BorderColor::all(border_color),
                     Slot { container, index },
                     DropTarget,
                     OnDrop::new(make_drop(index)),

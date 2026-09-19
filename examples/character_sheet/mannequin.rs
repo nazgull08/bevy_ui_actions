@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy::render::view::RenderLayers;
+use bevy::camera::visibility::RenderLayers;
 
 use crate::data::{EquipSlot, EquipmentState, ITEMS};
 
@@ -33,7 +33,7 @@ pub fn spawn_mannequin(
     let scene = asset_server.load("models/mannequin.glb#Scene0");
     let mannequin = commands
         .spawn((
-            SceneRoot(scene),
+            WorldAssetRoot(scene),
             Transform::from_translation(Vec3::new(0.0, -0.65, 0.0))
                 .with_rotation(Quat::from_rotation_y(std::f32::consts::PI)),
             Mannequin,
@@ -229,7 +229,7 @@ fn spawn_equip_visual(
         let scene = asset_server.load(format!("{}#Scene0", def.model));
         let visual = commands
             .spawn((
-                SceneRoot(scene),
+                WorldAssetRoot(scene),
                 Transform::default(),
                 parts.render_layer.clone(),
                 EquipVisual(slot),

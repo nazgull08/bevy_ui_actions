@@ -21,7 +21,7 @@
 //!     let slot = commands.spawn((
 //!         Node::default(),
 //!         BackgroundColor(Color::srgb(0.2, 0.2, 0.2)),
-//!         BorderColor(Color::srgb(0.4, 0.4, 0.4)),
+//!         BorderColor::all(Color::srgb(0.4, 0.4, 0.4)),
 //!         InteractiveVisual,
 //!         BorderStyle::slot(),
 //!         Interaction::None,
@@ -280,23 +280,21 @@ impl BorderStyle {
         }
 
         // Selected takes priority over active for border
-        if is_selected {
-            if let Some(selected_color) = self.selected {
+        if is_selected
+            && let Some(selected_color) = self.selected {
                 return match interaction {
                     Interaction::Hovered => Self::lighten(selected_color, 0.1),
                     _ => selected_color,
                 };
             }
-        }
 
-        if is_active {
-            if let Some(active_color) = self.active {
+        if is_active
+            && let Some(active_color) = self.active {
                 return match interaction {
                     Interaction::Hovered => Self::lighten(active_color, 0.08),
                     _ => active_color,
                 };
             }
-        }
 
         match interaction {
             Interaction::Pressed => self.pressed,
@@ -502,7 +500,7 @@ pub(crate) fn update_border_visuals(
                 *interaction
             };
 
-            *border = BorderColor(style.resolve(
+            *border = BorderColor::all(style.resolve(
                 effective_interaction,
                 is_active,
                 is_selected,

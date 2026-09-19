@@ -71,7 +71,7 @@ fn setup(mut commands: Commands) {
 }
 
 fn handle_link_clicks(
-    mut events: EventReader<HyperLinkClicked>,
+    mut events: MessageReader<HyperLinkClicked>,
     mut query: Query<&mut Text, With<StatusText>>,
 ) {
     for event in events.read() {

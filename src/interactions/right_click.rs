@@ -35,11 +35,10 @@ pub(crate) fn handle_right_clicks(
     if mouse.just_pressed(MouseButton::Right) {
         for (entity, interaction, on_right_click) in &query {
             if *interaction == Interaction::Hovered || *interaction == Interaction::Pressed {
-                if let Some(ref scope) = scope {
-                    if !is_in_scope(entity, scope, &parents) {
+                if let Some(ref scope) = scope
+                    && !is_in_scope(entity, scope, &parents) {
                         continue;
                     }
-                }
                 on_right_click.execute(&mut commands);
             }
         }

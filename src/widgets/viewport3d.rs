@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
 use bevy::prelude::*;
-use bevy::render::{
-    render_asset::RenderAssetUsages,
-    render_resource::{Extent3d, TextureDimension, TextureFormat, TextureUsages},
-    view::RenderLayers,
-};
+// PORT-0.17: render types split into dedicated crates (bevy_camera/bevy_asset).
+use bevy::asset::RenderAssetUsages;
+use bevy::camera::visibility::RenderLayers;
+use bevy::ui::UiGlobalTransform;
+use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat, TextureUsages};
 
 /// Configuration for spawning a 3D viewport widget.
 #[derive(Clone, Debug)]
@@ -170,11 +170,12 @@ impl SpawnViewport3dExt for Commands<'_, '_> {
             .spawn((
                 Camera3d::default(),
                 Camera {
-                    target: bevy::render::camera::RenderTarget::Image(image_handle.clone().into()),
                     order: -1,
                     clear_color: ClearColorConfig::Custom(config.background),
                     ..default()
                 },
+                // PORT-0.19: RenderTarget is its own component now (was Camera.target).
+                bevy::camera::RenderTarget::Image(image_handle.clone().into()),
                 Projection::Perspective(PerspectiveProjection {
                     fov: config.camera_fov.to_radians(),
                     ..default()
@@ -190,7 +191,7 @@ impl SpawnViewport3dExt for Commands<'_, '_> {
             .spawn((
                 PointLight {
                     intensity: config.light_intensity,
-                    shadows_enabled: false,
+                    shadow_maps_enabled: false,
                     ..default()
                 },
                 Transform::from_translation(config.light_offset),
@@ -243,7 +244,7 @@ pub(crate) fn viewport3d_drag_rotate(
     mut drag: ResMut<Viewport3dDragState>,
     mouse_button: Res<ButtonInput<MouseButton>>,
     windows: Query<&Window>,
-    viewports: Query<(Entity, &Viewport3d, &ComputedNode, &GlobalTransform)>,
+    viewports: Query<(Entity, &Viewport3d, &ComputedNode, &UiGlobalTransform)>,
     mut rotations: Query<&mut Viewport3dRotation>,
     mut transforms: Query<&mut Transform, With<Viewport3dPivot>>,
 ) {
@@ -259,7 +260,7 @@ pub(crate) fn viewport3d_drag_rotate(
             if !viewport.rotatable {
                 continue;
             }
-            let node_pos = gtf.translation().truncate();
+            let node_pos = gtf.translation;
             let size = computed.size();
             let half = size / 2.0;
             let min = node_pos - half;

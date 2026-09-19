@@ -109,7 +109,7 @@ fn setup(mut commands: Commands) {
                     ..default()
                 },
                 BackgroundColor(Color::srgb_u8(90, 140, 200)),
-                BorderColor(Color::srgb(0.35, 0.35, 0.4)),
+                BorderColor::all(Color::srgb(0.35, 0.35, 0.4)),
                 Swatch,
             ));
 
@@ -162,7 +162,7 @@ fn setup(mut commands: Commands) {
 /// SliderChanged → live state. One handler for all sliders; the Drives
 /// marker on the slider root says what it edits.
 fn apply_slider_changes(
-    mut events: EventReader<SliderChanged>,
+    mut events: MessageReader<SliderChanged>,
     drives: Query<&Drives>,
     mut mix: ResMut<Mix>,
 ) {

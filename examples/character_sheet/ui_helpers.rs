@@ -31,7 +31,7 @@ pub fn spawn_tab_button(
         } else {
             Color::srgb(0.12, 0.12, 0.15)
         }),
-        BorderColor(Color::srgb(0.3, 0.3, 0.35)),
+        BorderColor::all(Color::srgb(0.3, 0.3, 0.35)),
         Tab::new(index),
         VisualStyle::tab(),
         InteractiveVisual,
@@ -72,7 +72,7 @@ pub fn spawn_tab_panel(
                 ..default()
             },
             BackgroundColor(Color::srgb(0.10, 0.10, 0.13)),
-            BorderColor(Color::srgb(0.25, 0.25, 0.30)),
+            BorderColor::all(Color::srgb(0.25, 0.25, 0.30)),
             TabContent::new(index),
         ))
         .with_children(content);

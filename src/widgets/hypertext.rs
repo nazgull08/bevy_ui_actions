@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy::text::TextLayoutInfo;
+use bevy::ui::UiGlobalTransform;
 
 use crate::core::{TextRole, UiTextExt, UiThemedText};
 use crate::widgets::scroll_view::{ScrollView, StickToBottom};
@@ -104,7 +105,7 @@ pub struct TopicContainer {
 // ============================================================
 
 /// Fired when the user clicks a hyperlink in a [`HyperText`] block.
-#[derive(Event, Debug, Clone)]
+#[derive(Message, Debug, Clone)]
 pub struct HyperLinkClicked {
     /// The topic key from `[Display|key]` markup.
     pub topic: String,
@@ -268,7 +269,7 @@ impl SpawnHyperTextExt for ChildSpawnerCommands<'_> {
         let mut ec = self.spawn((
             Text::new(root_text),
             TextFont {
-                font_size,
+                font_size: FontSize::Px(font_size),
                 ..default()
             },
             TextColor(root_color),
@@ -287,7 +288,7 @@ impl SpawnHyperTextExt for ChildSpawnerCommands<'_> {
                 parent.spawn((
                     TextSpan::new(span_data.text),
                     TextFont {
-                        font_size,
+                        font_size: FontSize::Px(font_size),
                         ..default()
                     },
                     TextColor(span_data.color),
@@ -312,10 +313,10 @@ pub(crate) fn hypertext_click(
         Entity,
         &HyperText,
         &TextLayoutInfo,
-        &GlobalTransform,
+        &UiGlobalTransform,
         &ComputedNode,
     )>,
-    mut events: EventWriter<HyperLinkClicked>,
+    mut events: MessageWriter<HyperLinkClicked>,
 ) {
     if !mouse.just_pressed(MouseButton::Left) {
         return;
@@ -347,7 +348,7 @@ pub(crate) fn hypertext_hover(
     mut query: Query<(
         &HyperText,
         &TextLayoutInfo,
-        &GlobalTransform,
+        &UiGlobalTransform,
         &ComputedNode,
         &mut HyperTextHoverState,
         &Children,
@@ -375,12 +376,11 @@ pub(crate) fn hypertext_hover(
         hover_state.hovered_span = hovered_span;
 
         // Restore old hovered span to link_color (or visited_link_color)
-        if let Some(old_idx) = old {
-            if let Some(link) = hyper.link_spans.iter().find(|l| l.span_index == old_idx) {
+        if let Some(old_idx) = old
+            && let Some(link) = hyper.link_spans.iter().find(|l| l.span_index == old_idx) {
                 let color = resolve_link_color(hyper, &link.topic, registry.as_deref());
                 set_span_color(old_idx, color, children, &mut span_colors);
             }
-        }
 
         // Set new hovered span to hover_color
         if let Some(new_idx) = hovered_span {
@@ -395,13 +395,11 @@ fn resolve_link_color(
     topic: &str,
     registry: Option<&crate::widgets::dialogue::TopicRegistry>,
 ) -> Color {
-    if let Some(visited_color) = hyper.visited_link_color {
-        if let Some(reg) = registry {
-            if reg.is_discovered(topic) {
+    if let Some(visited_color) = hyper.visited_link_color
+        && let Some(reg) = registry
+            && reg.is_discovered(topic) {
                 return visited_color;
             }
-        }
-    }
     hyper.link_color
 }
 
@@ -410,7 +408,7 @@ fn resolve_link_color(
 /// Runs after `handle_topic_container` discovers topics, so that all existing
 /// hypertext blocks (including the one that was just clicked) get updated.
 pub(crate) fn update_visited_link_colors(
-    mut discovered_events: EventReader<crate::widgets::dialogue::TopicDiscovered>,
+    mut discovered_events: MessageReader<crate::widgets::dialogue::TopicDiscovered>,
     query: Query<(&HyperText, &HyperTextHoverState, &Children)>,
     mut span_colors: Query<&mut TextColor>,
     registry: Option<Res<crate::widgets::dialogue::TopicRegistry>>,
@@ -563,17 +561,17 @@ pub fn append_topic_block(
 /// Also fires [`TopicDiscovered`] on first view and marks the topic as discovered.
 ///
 /// Without a [`TopicRegistry`] resource this system is a no-op — events pass
-/// through for game code to handle via its own `EventReader<HyperLinkClicked>`.
+/// through for game code to handle via its own `MessageReader<HyperLinkClicked>`.
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn handle_topic_container(
-    mut link_events: EventReader<HyperLinkClicked>,
+    mut link_events: MessageReader<HyperLinkClicked>,
     container_query: Query<(Entity, &TopicContainer)>,
     parent_query: Query<&ChildOf>,
     scroll_query: Query<(), With<ScrollView>>,
     mut commands: Commands,
     registry: Option<ResMut<crate::widgets::dialogue::TopicRegistry>>,
     locked: Option<Res<crate::widgets::dialogue::DialogueTopicsLocked>>,
-    mut discovered_events: EventWriter<crate::widgets::dialogue::TopicDiscovered>,
+    mut discovered_events: MessageWriter<crate::widgets::dialogue::TopicDiscovered>,
 ) {
     // Topics suspended while a decision is pending — drop link events without
     // appending (mirrors the topic-panel lock). Events are still consumed so they
@@ -674,12 +672,16 @@ fn build_span_rects(
     let half_line = font_size * 0.6; // generous half-line-height for AABB
 
     // First: find all visual row y-centers from ALL glyphs (not just links).
+    // PORT-0.19: PositionedGlyph lost `size`; the rendered glyph dimensions
+    // now live in `atlas_info.rect` (same semantic — spaces have an empty
+    // rect, so the zero-size skip below still works).
     let mut row_centers: Vec<f32> = Vec::new();
     for glyph in &layout.glyphs {
-        if glyph.size.x == 0.0 && glyph.size.y == 0.0 {
+        let gsize = glyph.atlas_info.rect.size();
+        if gsize.x == 0.0 && gsize.y == 0.0 {
             continue; // skip zero-size glyphs (spaces, etc.)
         }
-        let cy = glyph.position.y + glyph.size.y * 0.5;
+        let cy = glyph.position.y + gsize.y * 0.5;
         let found = row_centers
             .iter()
             .any(|&rc| (rc - cy).abs() < font_size * 0.5);
@@ -703,24 +705,26 @@ fn build_span_rects(
     let mut map: HashMap<(usize, usize), (f32, f32, f32)> = HashMap::new(); // (min_x, max_x, row_center_y)
 
     for glyph in &layout.glyphs {
-        if !link_span_indices.contains(&glyph.span_index) {
+        // PORT-0.19: span_index → section_index on PositionedGlyph.
+        if !link_span_indices.contains(&glyph.section_index) {
             continue;
         }
-        if glyph.size.x == 0.0 && glyph.size.y == 0.0 {
+        let gsize = glyph.atlas_info.rect.size();
+        if gsize.x == 0.0 && gsize.y == 0.0 {
             continue;
         }
 
-        let cy = glyph.position.y + glyph.size.y * 0.5;
+        let cy = glyph.position.y + gsize.y * 0.5;
         let row = find_row(cy);
         let row_cy = row_centers.get(row).copied().unwrap_or(cy);
 
-        let key = (glyph.span_index, row);
+        let key = (glyph.section_index, row);
         map.entry(key)
             .and_modify(|(min_x, max_x, _)| {
                 *min_x = min_x.min(glyph.position.x);
-                *max_x = max_x.max(glyph.position.x + glyph.size.x);
+                *max_x = max_x.max(glyph.position.x + gsize.x);
             })
-            .or_insert((glyph.position.x, glyph.position.x + glyph.size.x, row_cy));
+            .or_insert((glyph.position.x, glyph.position.x + gsize.x, row_cy));
     }
 
     map.into_iter()
@@ -735,31 +739,31 @@ fn build_span_rects(
 /// Convert screen-space cursor to local text node space.
 /// Returns `None` if cursor is outside the node bounds.
 ///
-/// `cursor_position()` returns logical pixels, while UI `GlobalTransform`
-/// and `ComputedNode::size()` are in physical pixels. We scale the cursor
-/// by the UI scale factor so both coordinate spaces match.
+/// PORT-0.17: `TextLayoutInfo` glyphs are in LOGICAL pixels now, so the whole
+/// hit-test runs in logical space: the cursor is already logical, and the node
+/// transform/size (physical) are divided by the scale factor instead of
+/// scaling the cursor up. Identical at scale=1, correct on HiDPI.
 fn cursor_to_local(
     cursor: Vec2,
-    transform: &GlobalTransform,
+    transform: &UiGlobalTransform,
     computed: &ComputedNode,
 ) -> Option<Vec2> {
-    let scale_factor = 1.0 / computed.inverse_scale_factor();
-    let cursor_phys = cursor * scale_factor;
-    let node_pos = transform.translation().truncate();
-    let node_size = computed.size();
+    let inv_scale = computed.inverse_scale_factor();
+    let node_pos = transform.translation * inv_scale;
+    let node_size = computed.size() * inv_scale;
     let half = node_size / 2.0;
 
-    if cursor_phys.x < node_pos.x - half.x
-        || cursor_phys.x > node_pos.x + half.x
-        || cursor_phys.y < node_pos.y - half.y
-        || cursor_phys.y > node_pos.y + half.y
+    if cursor.x < node_pos.x - half.x
+        || cursor.x > node_pos.x + half.x
+        || cursor.y < node_pos.y - half.y
+        || cursor.y > node_pos.y + half.y
     {
         return None;
     }
 
     Some(Vec2::new(
-        cursor_phys.x - (node_pos.x - half.x),
-        cursor_phys.y - (node_pos.y - half.y),
+        cursor.x - (node_pos.x - half.x),
+        cursor.y - (node_pos.y - half.y),
     ))
 }
 
@@ -769,7 +773,7 @@ fn hit_test_link(
     cursor: Vec2,
     hyper: &HyperText,
     layout: &TextLayoutInfo,
-    transform: &GlobalTransform,
+    transform: &UiGlobalTransform,
     computed: &ComputedNode,
 ) -> Option<String> {
     let span_index = hit_test_span_index(cursor, hyper, layout, transform, computed)?;
@@ -786,7 +790,7 @@ fn hit_test_span_index(
     cursor: Vec2,
     hyper: &HyperText,
     layout: &TextLayoutInfo,
-    transform: &GlobalTransform,
+    transform: &UiGlobalTransform,
     computed: &ComputedNode,
 ) -> Option<usize> {
     let local = cursor_to_local(cursor, transform, computed)?;
@@ -828,11 +832,10 @@ fn set_span_color(
     }
 
     let child_index = span_index - 1;
-    if let Some(&child_entity) = children.iter().collect::<Vec<_>>().get(child_index) {
-        if let Ok(mut text_color) = span_colors.get_mut(child_entity) {
+    if let Some(&child_entity) = children.iter().collect::<Vec<_>>().get(child_index)
+        && let Ok(mut text_color) = span_colors.get_mut(child_entity) {
             text_color.0 = color;
         }
-    }
 }
 
 // ============================================================

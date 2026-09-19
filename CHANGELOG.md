@@ -4,6 +4,35 @@ All notable changes to `bevy_ui_actions` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project aims to follow [Semantic Versioning](https://semver.org/).
 
+## [0.3.0]
+
+Bevy 0.19 support (migrated across 0.17 → 0.18 → 0.19).
+
+### Changed
+- **Bevy 0.19.1** (from 0.16). All breaking engine changes absorbed
+  internally; the widget API is unchanged except where Bevy types leak
+  through configs (see below).
+- Buffered events are Bevy **Messages** now: `SliderChanged`,
+  `HyperLinkClicked`, dialogue events etc. are read with
+  `MessageReader` on the consumer side.
+- Hit-testing (hypertext links, slider, window drag, scroll thumb,
+  viewport3d) reworked for 0.17+ UI transforms (`UiGlobalTransform`)
+  and 0.19 Parley text (`PositionedGlyph` layout); logical-pixel space
+  throughout — correct on HiDPI.
+- `bevy_ui_render` feature is enabled by the library (0.17+ splits UI
+  rendering out; without it consumers with `default-features = false`
+  would render no UI at all).
+
+### Fixed
+- Hypertext link clicks/hover after the 0.17 UI-transform split (the
+  old `GlobalTransform` query silently matched nothing).
+
+### Note
+- Temporary `encase = "=0.12.1"` version anchor: encase 0.12.2 moved to
+  syn 3 in a patch release and breaks any fresh lockfile against current
+  Bevy (still on syn 2). The anchor will be removed once Bevy ships a
+  syn-3 build (bevyengine/bevy#25846).
+
 ## [0.2.7]
 
 Slider widget for tuning panels.

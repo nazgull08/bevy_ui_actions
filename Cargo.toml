@@ -1,15 +1,14 @@
 [package]
 name = "bevy_ui_actions"
-version = "0.2.7"
-edition = "2021"
+version = "0.3.0"
+edition = "2024"
 license = "MIT"
 description = "Action-driven UI toolkit for Bevy — clicks, drag-drop, tooltips, tabs, scroll views, modals, dialogue system, 3D viewports"
 repository = "https://github.com/nazgull08/bevy_ui_actions"
-homepage = "https://github.com/nazgull08/bevy_ui_actions"
 keywords = ["bevy", "ui", "gamedev", "drag-drop", "dialogue"]
 categories = ["game-development", "gui"]
 readme = "README.md"
-rust-version = "1.85"
+rust-version = "1.95"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -20,17 +19,27 @@ default = []
 viewport3d = ["bevy/bevy_core_pipeline", "bevy/bevy_pbr"]
 
 [dependencies]
-bevy = { version = "0.16.1", default-features = false, features = [
+# PORT-0.17: bevy_ui_render is a separate feature since 0.17 — without it
+# consumers with default-features=false get no UI rendering at all.
+bevy = { version = "0.19.1", default-features = false, features = [
     "bevy_ui",
+    "bevy_ui_render",
     "bevy_render",
     "bevy_sprite",
     "bevy_text",
     "bevy_picking",
     "bevy_window",
 ] }
+# TEMPORARY version anchor, not a real dependency: encase_derive_impl 0.12.2
+# jumped to syn 3 in a patch release (2026-09-18) and clashes with
+# bevy_macro_utils (syn 2) inside bevy_encase_derive — any fresh lockfile
+# breaks. bevy_render already depends on encase ^0.12; this pin just forces
+# the last syn-2 release. REMOVE once bevy ships a syn-3 build
+# (bevyengine/bevy#25846).
+encase = "=0.12.1"
 
 [dev-dependencies]
-bevy = { version = "0.16.1", features = ["default"] }
+bevy = { version = "0.19.1", features = ["default"] }
 
 [[example]]
 name = "counter"

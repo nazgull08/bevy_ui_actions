@@ -66,7 +66,7 @@ impl SpawnUiExt for ChildSpawnerCommands<'_> {
             btn.spawn((
                 Text::new(label.into()),
                 TextFont {
-                    font_size: config.font_size,
+                    font_size: FontSize::Px(config.font_size),
                     ..default()
                 },
                 UiThemedText,

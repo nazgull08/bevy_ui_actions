@@ -250,7 +250,8 @@ impl UiTextExt for ChildSpawnerCommands<'_> {
         self.spawn((
             Text::new(text.into()),
             TextFont {
-                font_size: size,
+                // PORT-0.19: font_size is FontSize (Parley); font is FontSource.
+                font_size: FontSize::Px(size),
                 ..default()
             },
             TextColor(color),
@@ -278,12 +279,12 @@ pub(crate) fn resolve_ui_theme(
     mut commands: Commands,
 ) {
     for (entity, mut text_font, mut text_color, role) in &mut query {
-        text_font.font = theme.font.clone();
+        text_font.font = theme.font.clone().into();
 
         // If spawned via ui_text(role), apply preset from theme
         if let Some(&role) = role {
             let preset = theme.preset(role);
-            text_font.font_size = preset.size;
+            text_font.font_size = FontSize::Px(preset.size);
             text_color.0 = preset.color;
         }
 

@@ -548,7 +548,7 @@ fn spawn_tooltip_ui(
                 ..default()
             },
             BackgroundColor(style.background),
-            BorderColor(style.border_color),
+            BorderColor::all(style.border_color),
             GlobalZIndex(ZLayer::Tooltip.z()),
         ))
         .with_children(|parent| {
@@ -584,8 +584,8 @@ fn spawn_tooltip_content(
 /// Create TextFont with optional font from style
 fn make_text_font(style: &TooltipStyle, size: f32) -> TextFont {
     TextFont {
-        font: style.font.clone().unwrap_or_default(),
-        font_size: size,
+        font: style.font.clone().unwrap_or_default().into(),
+        font_size: FontSize::Px(size),
         ..default()
     }
 }

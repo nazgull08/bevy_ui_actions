@@ -67,7 +67,7 @@ struct QuitAction;
 
 impl UiAction for QuitAction {
     fn execute(&self, world: &mut World) {
-        world.send_event(AppExit::Success);
+        world.write_message(AppExit::Success);
     }
 }
 

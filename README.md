@@ -210,6 +210,7 @@ cargo run --example character_sheet -p bevy_ui_actions --features viewport3d  # 
 
 | bevy_ui_actions | Bevy  |
 |-----------------|-------|
+| 0.3.x           | 0.19  |
 | 0.2.x           | 0.16  |
 | 0.1             | 0.16  |
 

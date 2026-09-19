@@ -101,7 +101,7 @@ impl SpawnPanelExt for ChildSpawnerCommands<'_> {
                 ..default()
             },
             BackgroundColor(config.background),
-            BorderColor(config.border_color),
+            BorderColor::all(config.border_color),
         ))
     }
 }
@@ -122,7 +122,7 @@ impl SpawnPanelExt for Commands<'_, '_> {
                 ..default()
             },
             BackgroundColor(config.background),
-            BorderColor(config.border_color),
+            BorderColor::all(config.border_color),
         ))
     }
 }

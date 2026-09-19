@@ -196,7 +196,7 @@ fn spawn_item_slot(parent: &mut ChildSpawnerCommands, item: &ItemData, equipped:
                 ..default()
             },
             BackgroundColor(bg_color),
-            BorderColor(Color::srgb(0.4, 0.4, 0.4)),
+            BorderColor::all(Color::srgb(0.4, 0.4, 0.4)),
             tooltip,
             InteractiveVisual,
         ))

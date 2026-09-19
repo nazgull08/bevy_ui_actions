@@ -34,11 +34,10 @@ pub(crate) fn handle_clicks(
 ) {
     for (entity, interaction, on_click) in &query {
         if *interaction == Interaction::Pressed {
-            if let Some(ref scope) = scope {
-                if !is_in_scope(entity, scope, &parents) {
+            if let Some(ref scope) = scope
+                && !is_in_scope(entity, scope, &parents) {
                     continue;
                 }
-            }
             on_click.execute(&mut commands);
         }
     }

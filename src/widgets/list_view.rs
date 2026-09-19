@@ -63,7 +63,7 @@ pub struct ListItem {
 }
 
 /// Event sent when a list item is selected.
-#[derive(Event)]
+#[derive(Message)]
 pub struct ListItemSelected {
     /// The selected ListItem entity.
     pub entity: Entity,
@@ -107,7 +107,7 @@ impl UiAction for SelectListItemAction {
                     world.entity_mut(self.item_entity).remove::<Selected>();
                 } else {
                     world.entity_mut(self.item_entity).insert(Selected);
-                    world.send_event(ListItemSelected {
+                    world.write_message(ListItemSelected {
                         entity: self.item_entity,
                         index: self.index,
                         list: self.list_entity,

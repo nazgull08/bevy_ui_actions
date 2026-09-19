@@ -1,6 +1,11 @@
 use crate::core::{is_in_scope, UiInputScope};
 use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
 use bevy::prelude::*;
+use bevy::ui::UiGlobalTransform;
+
+// PORT-0.17: ScrollPosition is a newtype over Vec2 now (`.0.x` / `.0.y`),
+// and layout no longer writes ScrollPosition back — the effective offset
+// lives in ComputedNode::scroll_position. Our own clamp logic still stands.
 
 // ============================================================
 // Types
@@ -221,11 +226,11 @@ impl SpawnScrollViewExt for ChildSpawnerCommands<'_> {
                     position_type: PositionType::Absolute,
                     top: Val::Px(0.0),
                     left: Val::Px(0.0),
+                    border_radius: BorderRadius::all(Val::Px(scrollbar_width / 2.0)),
                     ..default()
                 },
                 BackgroundColor(thumb_color),
                 Interaction::None,
-                BorderRadius::all(Val::Px(scrollbar_width / 2.0)),
             ))
             .id();
 
@@ -347,11 +352,11 @@ impl SpawnScrollViewExt for Commands<'_, '_> {
                     position_type: PositionType::Absolute,
                     top: Val::Px(0.0),
                     left: Val::Px(0.0),
+                    border_radius: BorderRadius::all(Val::Px(scrollbar_width / 2.0)),
                     ..default()
                 },
                 BackgroundColor(thumb_color),
                 Interaction::None,
-                BorderRadius::all(Val::Px(scrollbar_width / 2.0)),
             ))
             .id();
 
@@ -399,13 +404,13 @@ fn build_overflow(dir: ScrollDirection) -> (Overflow, FlexDirection) {
 /// Uses cursor position + node bounds instead of `Interaction` to avoid
 /// child elements (buttons, etc.) stealing hover from the scroll container.
 pub(crate) fn handle_scroll_input(
-    mut wheel_events: EventReader<MouseWheel>,
+    mut wheel_events: MessageReader<MouseWheel>,
     windows: Query<&Window>,
     mut query: Query<(
         Entity,
         &ScrollView,
         &mut ScrollPosition,
-        &GlobalTransform,
+        &UiGlobalTransform,
         &ComputedNode,
     )>,
     scope: Option<Res<UiInputScope>>,
@@ -436,24 +441,23 @@ pub(crate) fn handle_scroll_input(
             continue;
         }
 
-        if let Some(ref scope) = scope {
-            if !is_in_scope(entity, scope, &parents) {
+        if let Some(ref scope) = scope
+            && !is_in_scope(entity, scope, &parents) {
                 continue;
             }
-        }
 
         let speed = scroll_view.scroll_speed;
 
         match scroll_view.direction {
             ScrollDirection::Vertical => {
-                scroll_pos.offset_y -= total_y * speed;
+                scroll_pos.0.y -= total_y * speed;
             }
             ScrollDirection::Horizontal => {
-                scroll_pos.offset_x -= total_x * speed;
+                scroll_pos.0.x -= total_x * speed;
             }
             ScrollDirection::Both => {
-                scroll_pos.offset_x -= total_x * speed;
-                scroll_pos.offset_y -= total_y * speed;
+                scroll_pos.0.x -= total_x * speed;
+                scroll_pos.0.y -= total_y * speed;
             }
         }
 
@@ -463,8 +467,8 @@ pub(crate) fn handle_scroll_input(
 }
 
 /// Check if cursor position falls within a UI node's bounds.
-fn cursor_in_node(cursor: Vec2, transform: &GlobalTransform, computed: &ComputedNode) -> bool {
-    let node_pos = transform.translation().truncate();
+fn cursor_in_node(cursor: Vec2, transform: &UiGlobalTransform, computed: &ComputedNode) -> bool {
+    let node_pos = transform.translation;
     let size = computed.size();
     let half = size / 2.0;
     cursor.x >= node_pos.x - half.x
@@ -548,18 +552,18 @@ pub(crate) fn clamp_scroll_bounds(
         let max_scroll_x = (content_width - viewport_size.x).max(0.0);
         let max_scroll_y = (content_height - viewport_size.y).max(0.0);
 
-        scroll_pos.offset_x = scroll_pos.offset_x.clamp(0.0, max_scroll_x);
+        scroll_pos.0.x = scroll_pos.0.x.clamp(0.0, max_scroll_x);
 
         if let Some(mut stick) = stick {
             // Follow the tail while appended content settles into layout.
-            scroll_pos.offset_y = max_scroll_y;
+            scroll_pos.0.y = max_scroll_y;
             if stick.frames <= 1 {
                 commands.entity(entity).remove::<StickToBottom>();
             } else {
                 stick.frames -= 1;
             }
         } else {
-            scroll_pos.offset_y = scroll_pos.offset_y.clamp(0.0, max_scroll_y);
+            scroll_pos.0.y = scroll_pos.0.y.clamp(0.0, max_scroll_y);
         }
     }
 }
@@ -609,7 +613,7 @@ pub(crate) fn update_scrollbar_thumb(
         // Thumb position proportional to scroll offset
         let max_scroll = content_height - viewport_height;
         let scroll_ratio = if max_scroll > 0.0 {
-            scroll_pos.offset_y / max_scroll
+            scroll_pos.0.y / max_scroll
         } else {
             0.0
         };
@@ -647,11 +651,10 @@ pub(crate) fn handle_scrollbar_drag(
             if *interaction == Interaction::Pressed || *interaction == Interaction::Hovered {
                 let scroll_entity = thumb.scroll_view;
 
-                if let Some(ref scope) = scope {
-                    if !is_in_scope(scroll_entity, scope, &parents) {
+                if let Some(ref scope) = scope
+                    && !is_in_scope(scroll_entity, scope, &parents) {
                         continue;
                     }
-                }
 
                 let Ok((scroll_pos, viewport_node, children)) = scroll_query.get(scroll_entity)
                 else {
@@ -678,7 +681,7 @@ pub(crate) fn handle_scrollbar_drag(
 
                 drag_state.dragging = Some(scroll_entity);
                 drag_state.start_mouse_y = cursor_y;
-                drag_state.start_scroll_offset = scroll_pos.offset_y;
+                drag_state.start_scroll_offset = scroll_pos.0.y;
                 drag_state.max_scroll = max_scroll;
                 drag_state.usable_track = usable_track;
                 break;
@@ -698,7 +701,7 @@ pub(crate) fn handle_scrollbar_drag(
                     .clamp(0.0, drag_state.max_scroll);
 
                 if let Ok((mut scroll_pos, _, _)) = scroll_query.get_mut(scroll_entity) {
-                    scroll_pos.offset_y = new_offset;
+                    scroll_pos.0.y = new_offset;
                 }
             }
         } else {
@@ -720,7 +723,7 @@ pub(crate) fn handle_track_click(
             Entity,
             &Interaction,
             &ScrollbarTrack,
-            &GlobalTransform,
+            &UiGlobalTransform,
             &ComputedNode,
         ),
         Without<ScrollView>,
@@ -753,11 +756,10 @@ pub(crate) fn handle_track_click(
             continue;
         }
 
-        if let Some(ref scope) = scope {
-            if !is_in_scope(entity, scope, &scope_parents) {
+        if let Some(ref scope) = scope
+            && !is_in_scope(entity, scope, &scope_parents) {
                 continue;
             }
-        }
 
         let Ok((mut scroll_pos, viewport_node, children)) = scroll_query.get_mut(track.scroll_view)
         else {
@@ -784,17 +786,17 @@ pub(crate) fn handle_track_click(
         }
 
         // Where on the track did we click? (0.0 = top, 1.0 = bottom)
-        let track_top = track_transform.translation().y - track_height / 2.0;
+        let track_top = track_transform.translation.y - track_height / 2.0;
         let click_ratio = ((cursor_y - track_top) / track_height).clamp(0.0, 1.0);
 
         // Where is the thumb currently? (ratio)
-        let current_ratio = scroll_pos.offset_y / max_scroll;
+        let current_ratio = scroll_pos.0.y / max_scroll;
 
         // Page scroll: move by viewport_height in the appropriate direction
         if click_ratio < current_ratio {
-            scroll_pos.offset_y = (scroll_pos.offset_y - viewport_height).max(0.0);
+            scroll_pos.0.y = (scroll_pos.0.y - viewport_height).max(0.0);
         } else {
-            scroll_pos.offset_y = (scroll_pos.offset_y + viewport_height).min(max_scroll);
+            scroll_pos.0.y = (scroll_pos.0.y + viewport_height).min(max_scroll);
         }
 
         break;

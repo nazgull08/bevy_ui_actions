@@ -93,7 +93,7 @@ fn setup(mut commands: Commands) {
                         ..default()
                     },
                     BackgroundColor(EMPTY),
-                    BorderColor(Color::srgb(0.4, 0.4, 0.4)),
+                    BorderColor::all(Color::srgb(0.4, 0.4, 0.4)),
                     Slot(i),
                     Draggable,
                     DropTarget,

@@ -154,7 +154,7 @@ fn open_dialogue() {
 }
 
 /// Log when topics are discovered (game code would use this for quests, codex, etc.)
-fn log_discoveries(mut events: EventReader<TopicDiscovered>) {
+fn log_discoveries(mut events: MessageReader<TopicDiscovered>) {
     for event in events.read() {
         info!("Topic discovered: '{}'", event.topic);
     }
@@ -164,8 +164,8 @@ fn log_discoveries(mut events: EventReader<TopicDiscovered>) {
 /// clicks and in-text `[Sealed Vaults|vaults]` links funnel through `HyperLinkClicked`,
 /// so this catches either. The library also appends the topic's lore (auto-append).
 fn present_vault_choices(
-    mut links: EventReader<HyperLinkClicked>,
-    mut set_choices: EventWriter<SetDialogueChoices>,
+    mut links: MessageReader<HyperLinkClicked>,
+    mut set_choices: MessageWriter<SetDialogueChoices>,
     mut topics_locked: ResMut<DialogueTopicsLocked>,
 ) {
     for link in links.read() {
@@ -183,9 +183,9 @@ fn present_vault_choices(
 /// Resolve a choice: log the outcome (a real game would append text / set a flag /
 /// open trade), clear the choices and unlock topics so browsing resumes.
 fn resolve_choice(
-    mut events: EventReader<DialogueChoiceSelected>,
-    mut set_choices: EventWriter<SetDialogueChoices>,
-    mut append: EventWriter<AppendDialogueText>,
+    mut events: MessageReader<DialogueChoiceSelected>,
+    mut set_choices: MessageWriter<SetDialogueChoices>,
+    mut append: MessageWriter<AppendDialogueText>,
     mut topics_locked: ResMut<DialogueTopicsLocked>,
 ) {
     for event in events.read() {

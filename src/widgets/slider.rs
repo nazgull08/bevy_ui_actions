@@ -12,6 +12,7 @@
 
 use crate::core::{is_in_scope, UiInputScope};
 use bevy::prelude::*;
+use bevy::ui::UiGlobalTransform;
 
 // ============================================================
 // Types
@@ -71,7 +72,7 @@ pub struct SliderThumb {
 pub struct SliderFill;
 
 /// Event: a slider's value changed through mouse interaction.
-#[derive(Event)]
+#[derive(Message)]
 pub struct SliderChanged {
     /// The slider root entity.
     pub slider: Entity,
@@ -183,10 +184,11 @@ impl SpawnSliderExt for ChildSpawnerCommands<'_> {
             Node {
                 width: config.width,
                 height: config.height,
+                // PORT-0.18: BorderRadius is a Node field now, not a component.
+                border_radius: BorderRadius::all(Val::Px(3.0)),
                 ..default()
             },
             BackgroundColor(config.track_color),
-            BorderRadius::all(Val::Px(3.0)),
             Interaction::None,
             slider,
         ));
@@ -201,10 +203,10 @@ impl SpawnSliderExt for ChildSpawnerCommands<'_> {
                         top: Val::Px(0.0),
                         width: Val::Percent(ratio * 100.0),
                         height: Val::Percent(100.0),
+                        border_radius: BorderRadius::all(Val::Px(3.0)),
                         ..default()
                     },
                     BackgroundColor(fill_color),
-                    BorderRadius::all(Val::Px(3.0)),
                     SliderFill,
                 ));
             }
@@ -215,10 +217,10 @@ impl SpawnSliderExt for ChildSpawnerCommands<'_> {
                     top: Val::Px(0.0),
                     width: Val::Px(config.thumb_width),
                     height: Val::Percent(100.0),
+                    border_radius: BorderRadius::all(Val::Px(3.0)),
                     ..default()
                 },
                 BackgroundColor(config.thumb_color),
-                BorderRadius::all(Val::Px(3.0)),
                 Interaction::None,
                 SliderThumb { slider: root_id },
             ));
@@ -245,9 +247,9 @@ pub(crate) fn slider_drag(
     mouse: Res<ButtonInput<MouseButton>>,
     windows: Query<&Window>,
     mut drag_state: ResMut<SliderDragState>,
-    mut sliders: Query<(Entity, &mut Slider, &Interaction, &GlobalTransform, &ComputedNode)>,
+    mut sliders: Query<(Entity, &mut Slider, &Interaction, &UiGlobalTransform, &ComputedNode)>,
     thumbs: Query<(&Interaction, &SliderThumb)>,
-    mut events: EventWriter<SliderChanged>,
+    mut events: MessageWriter<SliderChanged>,
     scope: Option<Res<UiInputScope>>,
     parents: Query<&ChildOf>,
 ) {
@@ -271,11 +273,10 @@ pub(crate) fn slider_drag(
             if !over_track && !hovered_via_thumb(entity) {
                 continue;
             }
-            if let Some(ref scope) = scope {
-                if !is_in_scope(entity, scope, &parents) {
+            if let Some(ref scope) = scope
+                && !is_in_scope(entity, scope, &parents) {
                     continue;
                 }
-            }
             drag_state.dragging = Some(entity);
             break;
         }
@@ -303,7 +304,7 @@ pub(crate) fn slider_drag(
     if track_width <= 0.0 {
         return;
     }
-    let track_left = transform.translation().x * scale - track_width / 2.0;
+    let track_left = transform.translation.x * scale - track_width / 2.0;
     let ratio = ((cursor_x - track_left) / track_width).clamp(0.0, 1.0);
     let target = slider.min + ratio * (slider.max - slider.min);
 

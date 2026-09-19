@@ -57,7 +57,7 @@ pub fn spawn_stats_tab(parent: &mut ChildSpawnerCommands, stats: &CharacterStats
                     ..default()
                 },
                 BackgroundColor(Color::srgb(0.25, 0.15, 0.15)),
-                BorderColor(Color::srgb(0.5, 0.3, 0.3)),
+                BorderColor::all(Color::srgb(0.5, 0.3, 0.3)),
                 OnClick::new(ShowRespecModal),
                 InteractiveVisual,
             ))
@@ -174,7 +174,7 @@ fn spawn_attr_button(
                 ..default()
             },
             BackgroundColor(bg),
-            BorderColor(border),
+            BorderColor::all(border),
             OnClick::new(action),
             InteractiveVisual,
         ))

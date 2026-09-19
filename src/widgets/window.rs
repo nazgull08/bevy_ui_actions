@@ -15,7 +15,7 @@
 
 use crate::core::{is_in_scope, TextRole, UiInputScope, UiTextExt, ZLayer};
 use bevy::prelude::*;
-use bevy::ui::FocusPolicy;
+use bevy::ui::{FocusPolicy, UiGlobalTransform};
 
 /// Marker: the root entity of a floating window.
 #[derive(Component)]
@@ -194,7 +194,7 @@ impl SpawnWindowExt for Commands<'_, '_> {
                     ..default()
                 },
                 BackgroundColor(config.background),
-                BorderColor(config.border_color),
+                BorderColor::all(config.border_color),
                 // Block clicks from passing through to whatever is behind the window.
                 FocusPolicy::Block,
                 GlobalZIndex(0),
@@ -304,8 +304,8 @@ pub(crate) fn window_move_system(
     let cursor = windows.single().ok().and_then(|w| w.cursor_position());
 
     // Begin a move: press over a movable window's title bar.
-    if drag.active.is_none() && mouse.just_pressed(MouseButton::Left) {
-        if let Some(cursor) = cursor {
+    if drag.active.is_none() && mouse.just_pressed(MouseButton::Left)
+        && let Some(cursor) = cursor {
             for (bar, interaction) in &bars {
                 if !matches!(interaction, Interaction::Pressed | Interaction::Hovered) {
                     continue;
@@ -314,11 +314,10 @@ pub(crate) fn window_move_system(
                     continue;
                 }
                 // Respect a modal/overlay input trap (e.g. a modal in front).
-                if let Some(ref scope) = scope {
-                    if !is_in_scope(bar.window, scope, &scope_parents) {
+                if let Some(ref scope) = scope
+                    && !is_in_scope(bar.window, scope, &scope_parents) {
                         continue;
                     }
-                }
                 if let Ok((node, _)) = nodes.get(bar.window) {
                     let top_left = Vec2::new(val_px(node.left), val_px(node.top));
                     drag.active = Some(WindowDrag {
@@ -329,7 +328,6 @@ pub(crate) fn window_move_system(
                 break;
             }
         }
-    }
 
     // Continue or end the move.
     let Some(active) = &drag.active else {
@@ -376,10 +374,10 @@ pub struct WindowManager {
 ///
 /// `cursor_position()` is logical pixels; UI `GlobalTransform` and
 /// `ComputedNode::size()` are physical. We scale the cursor to physical space.
-fn cursor_in_window(cursor: Vec2, transform: &GlobalTransform, computed: &ComputedNode) -> bool {
+fn cursor_in_window(cursor: Vec2, transform: &UiGlobalTransform, computed: &ComputedNode) -> bool {
     let scale_factor = 1.0 / computed.inverse_scale_factor();
     let cursor_phys = cursor * scale_factor;
-    let center = transform.translation().truncate();
+    let center = transform.translation;
     let half = computed.size() / 2.0;
     cursor_phys.x >= center.x - half.x
         && cursor_phys.x <= center.x + half.x
@@ -421,7 +419,7 @@ pub(crate) fn window_focus_system(
     mut manager: ResMut<WindowManager>,
     mouse: Res<ButtonInput<MouseButton>>,
     windows: Query<&Window>,
-    win_nodes: Query<(&GlobalTransform, &ComputedNode), With<UiWindow>>,
+    win_nodes: Query<(&UiGlobalTransform, &ComputedNode), With<UiWindow>>,
     scope: Option<Res<UiInputScope>>,
     scope_parents: Query<&ChildOf>,
 ) {
@@ -435,25 +433,22 @@ pub(crate) fn window_focus_system(
     // Front-to-back: tail of the stack is on top.
     let mut hit: Option<Entity> = None;
     for &win in manager.focus_stack.iter().rev() {
-        if let Some(ref scope) = scope {
-            if !is_in_scope(win, scope, &scope_parents) {
+        if let Some(ref scope) = scope
+            && !is_in_scope(win, scope, &scope_parents) {
                 continue;
             }
-        }
-        if let Ok((transform, computed)) = win_nodes.get(win) {
-            if cursor_in_window(cursor, transform, computed) {
+        if let Ok((transform, computed)) = win_nodes.get(win)
+            && cursor_in_window(cursor, transform, computed) {
                 hit = Some(win);
                 break;
             }
-        }
     }
 
-    if let Some(win) = hit {
-        if manager.focus_stack.last() != Some(&win) {
+    if let Some(win) = hit
+        && manager.focus_stack.last() != Some(&win) {
             manager.focus_stack.retain(|&e| e != win);
             manager.focus_stack.push(win);
         }
-    }
 }
 
 /// Write `GlobalZIndex` from stack order and maintain the [`WindowFocused`] marker.
@@ -504,11 +499,10 @@ pub(crate) fn window_close_system(
         if *interaction != Interaction::Pressed {
             continue;
         }
-        if let Some(ref scope) = scope {
-            if !is_in_scope(button.window, scope, &scope_parents) {
+        if let Some(ref scope) = scope
+            && !is_in_scope(button.window, scope, &scope_parents) {
                 continue;
             }
-        }
         commands.entity(button.window).despawn();
     }
 }

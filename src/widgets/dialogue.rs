@@ -373,7 +373,7 @@ impl TopicRegistry {
 }
 
 /// Event fired when a topic is discovered (first time viewed) via the dialogue system.
-#[derive(Event, Debug, Clone)]
+#[derive(Message, Debug, Clone)]
 pub struct TopicDiscovered {
     /// The topic key that was discovered.
     pub topic: String,
@@ -428,7 +428,7 @@ pub struct DialogueChoiceButton {
 }
 
 /// Event: the player selected a dialogue choice. Game code maps `key` → effect.
-#[derive(Event, Debug, Clone)]
+#[derive(Message, Debug, Clone)]
 pub struct DialogueChoiceSelected {
     /// The `key` of the selected [`DialogueChoice`].
     pub key: String,
@@ -440,7 +440,7 @@ pub struct DialogueChoiceSelected {
 ///
 /// An empty `choices` list clears the row (back to pure topic mode). Only the most
 /// recent event per frame is applied.
-#[derive(Event, Debug, Clone, Default)]
+#[derive(Message, Debug, Clone, Default)]
 pub struct SetDialogueChoices {
     /// The new set of answers. Empty = clear.
     pub choices: Vec<DialogueChoice>,
@@ -466,7 +466,7 @@ impl SetDialogueChoices {
 ///
 /// `text` supports `[Display|key]` hyperlink markup (so an appended block can
 /// surface new topic links). `header` renders an optional bold title above it.
-#[derive(Event, Debug, Clone)]
+#[derive(Message, Debug, Clone)]
 pub struct AppendDialogueText {
     /// Optional bold header line above the text.
     pub header: Option<String>,
@@ -500,11 +500,11 @@ pub struct DialogueCloseButton;
 /// so a standalone dialogue closes with no extra wiring. Games that own external
 /// state (input-focus mode, pause) can listen to it and drive their own teardown
 /// — the library never needs to know about that state.
-#[derive(Event, Debug, Clone)]
+#[derive(Message, Debug, Clone)]
 pub struct DialogueCloseRequested;
 
 /// Event: dismiss the current dialogue.
-#[derive(Event)]
+#[derive(Message)]
 pub struct DismissDialogueEvent;
 
 /// Action that dismisses the current dialogue.
@@ -512,7 +512,7 @@ pub struct DismissDialogue;
 
 impl UiAction for DismissDialogue {
     fn execute(&self, world: &mut World) {
-        world.send_event(DismissDialogueEvent);
+        world.write_message(DismissDialogueEvent);
     }
 }
 
@@ -592,7 +592,7 @@ pub(crate) fn process_dialogue_queue(
 pub(crate) fn handle_dialogue_close_input(
     keys: Res<ButtonInput<KeyCode>>,
     query: Query<&DialogueBox>,
-    mut events: EventWriter<DialogueCloseRequested>,
+    mut events: MessageWriter<DialogueCloseRequested>,
 ) {
     if keys.just_pressed(KeyCode::Escape) {
         for dialogue in &query {
@@ -606,7 +606,7 @@ pub(crate) fn handle_dialogue_close_input(
 
 /// Processes DismissDialogueEvent: fires on_close action and despawns.
 pub(crate) fn handle_dialogue_dismiss_event(
-    mut events: EventReader<DismissDialogueEvent>,
+    mut events: MessageReader<DismissDialogueEvent>,
     query: Query<(Entity, &DialogueBox)>,
     mut commands: Commands,
     scope: Option<Res<UiInputScope>>,
@@ -645,7 +645,7 @@ pub(crate) fn handle_topic_panel_clicks(
     query: Query<(&Interaction, &DialogueTopicButton), Changed<Interaction>>,
     content_query: Query<Entity, With<DialogueContent>>,
     locked: Res<DialogueTopicsLocked>,
-    mut events: EventWriter<HyperLinkClicked>,
+    mut events: MessageWriter<HyperLinkClicked>,
 ) {
     // Topics suspended while a decision is pending.
     if locked.0 {
@@ -667,7 +667,7 @@ pub(crate) fn handle_topic_panel_clicks(
 /// topic-panel button clicks funnel through [`HyperLinkClicked`], so tracking it
 /// here covers both. A non-topic link key simply matches no panel button (harmless).
 pub(crate) fn track_active_topic(
-    mut events: EventReader<HyperLinkClicked>,
+    mut events: MessageReader<HyperLinkClicked>,
     mut active: ResMut<ActiveTopic>,
 ) {
     for event in events.read() {
@@ -708,11 +708,10 @@ pub(crate) fn update_topic_button_colors(
             }
         };
         for child in children.iter() {
-            if let Ok(mut tc) = text_colors.get_mut(child) {
-                if tc.0 != color {
+            if let Ok(mut tc) = text_colors.get_mut(child)
+                && tc.0 != color {
                     tc.0 = color;
                 }
-            }
         }
     }
 }
@@ -721,7 +720,7 @@ pub(crate) fn update_topic_button_colors(
 /// Disabled choices emit nothing. Game code maps the key to an effect.
 pub(crate) fn handle_choice_clicks(
     query: Query<(&Interaction, &DialogueChoiceButton), Changed<Interaction>>,
-    mut events: EventWriter<DialogueChoiceSelected>,
+    mut events: MessageWriter<DialogueChoiceSelected>,
 ) {
     for (interaction, button) in &query {
         if *interaction == Interaction::Pressed && button.enabled {
@@ -739,7 +738,7 @@ pub(crate) fn handle_choice_hotkeys(
     keys: Res<ButtonInput<KeyCode>>,
     dialogue_query: Query<&DialogueBox>,
     buttons: Query<&DialogueChoiceButton>,
-    mut events: EventWriter<DialogueChoiceSelected>,
+    mut events: MessageWriter<DialogueChoiceSelected>,
 ) {
     let Ok(dialogue) = dialogue_query.single() else {
         return;
@@ -775,7 +774,7 @@ pub(crate) fn handle_choice_hotkeys(
 /// Emits [`DialogueCloseRequested`] when the close ("Goodbye") button is clicked.
 pub(crate) fn handle_close_button_clicks(
     query: Query<&Interaction, (Changed<Interaction>, With<DialogueCloseButton>)>,
-    mut events: EventWriter<DialogueCloseRequested>,
+    mut events: MessageWriter<DialogueCloseRequested>,
 ) {
     for interaction in &query {
         if *interaction == Interaction::Pressed {
@@ -788,8 +787,8 @@ pub(crate) fn handle_close_button_clicks(
 /// standalone dialogue closes with no extra wiring. Games that own external state
 /// (input focus, pause) can additionally listen to the event and react.
 pub(crate) fn dismiss_on_close_request(
-    mut requests: EventReader<DialogueCloseRequested>,
-    mut dismiss: EventWriter<DismissDialogueEvent>,
+    mut requests: MessageReader<DialogueCloseRequested>,
+    mut dismiss: MessageWriter<DismissDialogueEvent>,
 ) {
     if requests.read().count() > 0 {
         dismiss.write(DismissDialogueEvent);
@@ -800,7 +799,7 @@ pub(crate) fn dismiss_on_close_request(
 /// the always-present [`DialogueChoicesRow`] anchor in place. Only the latest event
 /// this frame is applied (the choice set is a state, not a stream).
 pub(crate) fn apply_set_choices(
-    mut events: EventReader<SetDialogueChoices>,
+    mut events: MessageReader<SetDialogueChoices>,
     row_query: Query<(Entity, Option<&Children>), With<DialogueChoicesRow>>,
     existing_buttons: Query<Entity, With<DialogueChoiceButton>>,
     dialogue_query: Query<&DialogueBox>,
@@ -841,7 +840,7 @@ pub(crate) fn apply_set_choices(
 /// `offset_y = MAX` would clamp to the *old* height; the latch re-pins until layout
 /// settles.
 pub(crate) fn apply_append_text(
-    mut events: EventReader<AppendDialogueText>,
+    mut events: MessageReader<AppendDialogueText>,
     content_query: Query<(Entity, &TopicContainer), With<DialogueContent>>,
     parent_query: Query<&ChildOf>,
     scroll_query: Query<(), With<ScrollView>>,
@@ -928,16 +927,16 @@ pub(crate) fn update_choice_button_visuals(
             if background.0 != bg {
                 background.0 = bg;
             }
-            if border_color.0 != border {
-                border_color.0 = border;
+            // PORT-0.17: BorderColor is per-side now — compare/assign whole value.
+            if *border_color != BorderColor::all(border) {
+                *border_color = BorderColor::all(border);
             }
         }
         for child in children.iter() {
-            if let Ok(mut tc) = text_colors.get_mut(child) {
-                if tc.0 != text {
+            if let Ok(mut tc) = text_colors.get_mut(child)
+                && tc.0 != text {
                     tc.0 = text;
                 }
-            }
         }
     }
 }
@@ -945,7 +944,7 @@ pub(crate) fn update_choice_button_visuals(
 /// Updates the topic panel when new topics are discovered.
 /// Rebuilds the button list sorted alphabetically by title.
 pub(crate) fn update_topic_panel(
-    mut discovered_events: EventReader<TopicDiscovered>,
+    mut discovered_events: MessageReader<TopicDiscovered>,
     panel_query: Query<(Entity, &Children), With<DialogueTopicPanel>>,
     existing_buttons: Query<Entity, With<DialogueTopicButton>>,
     dialogue_query: Query<&DialogueBox>,
@@ -999,7 +998,7 @@ pub(crate) fn update_topic_panel(
                 btn.spawn((
                     Text::new(title.clone()),
                     TextFont {
-                        font_size: topic_list_role.size(),
+                        font_size: FontSize::Px(topic_list_role.size()),
                         ..default()
                     },
                     TextColor(link_color),
@@ -1053,17 +1052,17 @@ fn spawn_choice_button(
         Node {
             padding: UiRect::axes(Val::Px(12.0), Val::Px(7.0)),
             border: UiRect::all(Val::Px(1.0)),
+            border_radius: BorderRadius::all(Val::Px(config.choice_border_radius)),
             ..default()
         },
         BackgroundColor(bg_color),
-        BorderColor(config.choice_border),
-        BorderRadius::all(Val::Px(config.choice_border_radius)),
+        BorderColor::all(config.choice_border),
     ))
     .with_children(|btn| {
         btn.spawn((
             Text::new(label),
             TextFont {
-                font_size,
+                font_size: FontSize::Px(font_size),
                 ..default()
             },
             TextColor(text_color),
@@ -1265,11 +1264,11 @@ fn spawn_dialogue(
                                 position_type: PositionType::Absolute,
                                 top: Val::Px(0.0),
                                 left: Val::Px(0.0),
+                                border_radius: BorderRadius::all(Val::Px(scrollbar_width / 2.0)),
                                 ..default()
                             },
                             BackgroundColor(thumb_color),
                             Interaction::None,
-                            BorderRadius::all(Val::Px(scrollbar_width / 2.0)),
                         ))
                         .id();
 
@@ -1359,7 +1358,7 @@ fn spawn_dialogue(
                                     btn.spawn((
                                         Text::new(title.clone()),
                                         TextFont {
-                                            font_size: topic_list_role.size(),
+                                            font_size: FontSize::Px(topic_list_role.size()),
                                             ..default()
                                         },
                                         TextColor(link_color),
@@ -1419,11 +1418,11 @@ fn spawn_dialogue(
                                     padding: UiRect::axes(Val::Px(16.0), Val::Px(7.0)),
                                     border: UiRect::all(Val::Px(1.0)),
                                     margin: UiRect::top(Val::Px(10.0)),
+                                    border_radius: BorderRadius::all(Val::Px(config.choice_border_radius)),
                                     ..default()
                                 },
                                 BackgroundColor(config.choice_bg),
-                                BorderColor(config.choice_border),
-                                BorderRadius::all(Val::Px(config.choice_border_radius)),
+                                BorderColor::all(config.choice_border),
                                 InteractiveVisual,
                                 // Match the choice-button palette (hover/press feedback).
                                 VisualStyle::new(
@@ -1437,7 +1436,7 @@ fn spawn_dialogue(
                                 btn.spawn((
                                     Text::new(config.close_button_label.clone()),
                                     TextFont {
-                                        font_size: close_font,
+                                        font_size: FontSize::Px(close_font),
                                         ..default()
                                     },
                                     TextColor(config.choice_text_color),

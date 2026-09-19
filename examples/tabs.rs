@@ -111,7 +111,7 @@ fn spawn_tab_button(parent: &mut ChildSpawnerCommands, index: usize, label: &str
         } else {
             Color::srgb(0.15, 0.15, 0.18)
         }),
-        BorderColor(Color::srgb(0.3, 0.3, 0.35)),
+        BorderColor::all(Color::srgb(0.3, 0.3, 0.35)),
         Tab::new(index),
         VisualStyle::tab(),
         InteractiveVisual,
@@ -153,7 +153,7 @@ fn spawn_tab_content(
                 ..default()
             },
             BackgroundColor(bg_color),
-            BorderColor(Color::srgb(0.3, 0.3, 0.35)),
+            BorderColor::all(Color::srgb(0.3, 0.3, 0.35)),
             TabContent::new(index),
         ))
         .with_children(|panel| {
