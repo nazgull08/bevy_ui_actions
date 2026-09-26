@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.1
+
+- **Fix:** hypertext link hit-testing on HiDPI. Bevy 0.19 lays glyphs out in
+  physical pixels (`glyph.position`, `atlas_info.rect`) while
+  `TextLayoutInfo::size` is logical; 0.3.0 built link rects from raw glyph
+  coordinates and compared them with a logical cursor, so on a 2.0 scale
+  factor every link landed twice as far from the node origin and twice as
+  large. Glyph coordinates are now scaled by the node's inverse scale factor.
+
 All notable changes to `bevy_ui_actions` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project aims to follow [Semantic Versioning](https://semver.org/).

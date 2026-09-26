@@ -653,17 +653,25 @@ struct SpanRect {
     max: Vec2,
 }
 
-/// Build bounding rects for all link spans.
+/// Build bounding rects for all link spans, in LOGICAL pixels.
 ///
 /// A span that wraps across two visual rows produces two `SpanRect`s.
 /// Horizontal extent: first glyph min to last glyph max on that row.
 /// Vertical extent: span's glyph y-center ± font_size (covers full line height
 /// regardless of glyph case). We cluster glyphs into visual rows by y-proximity
 /// because `glyph.line_index` is unreliable (always 0 for wrapped text).
+///
+/// `inv_scale` is the node's `ComputedNode::inverse_scale_factor()`. Bevy
+/// 0.19 lays glyphs out in PHYSICAL pixels (`glyph.position`, `atlas_info.rect`)
+/// while `TextLayoutInfo::size` is logical; every glyph coordinate is scaled
+/// here so the rects live in the same space as the cursor and `font_size`.
+/// Measured on a 2.0 scale factor: a 20 px font renders glyphs 30–35 px tall
+/// and x positions beyond the logical layout width — see the 0.3.1 changelog.
 fn build_span_rects(
     layout: &TextLayoutInfo,
     link_span_indices: &[usize],
     font_size: f32,
+    inv_scale: f32,
 ) -> Vec<SpanRect> {
     use std::collections::HashMap;
 
@@ -677,11 +685,11 @@ fn build_span_rects(
     // rect, so the zero-size skip below still works).
     let mut row_centers: Vec<f32> = Vec::new();
     for glyph in &layout.glyphs {
-        let gsize = glyph.atlas_info.rect.size();
+        let gsize = glyph.atlas_info.rect.size() * inv_scale;
         if gsize.x == 0.0 && gsize.y == 0.0 {
             continue; // skip zero-size glyphs (spaces, etc.)
         }
-        let cy = glyph.position.y + gsize.y * 0.5;
+        let cy = glyph.position.y * inv_scale + gsize.y * 0.5;
         let found = row_centers
             .iter()
             .any(|&rc| (rc - cy).abs() < font_size * 0.5);
@@ -709,22 +717,23 @@ fn build_span_rects(
         if !link_span_indices.contains(&glyph.section_index) {
             continue;
         }
-        let gsize = glyph.atlas_info.rect.size();
+        let gsize = glyph.atlas_info.rect.size() * inv_scale;
         if gsize.x == 0.0 && gsize.y == 0.0 {
             continue;
         }
+        let pos = glyph.position * inv_scale;
 
-        let cy = glyph.position.y + gsize.y * 0.5;
+        let cy = pos.y + gsize.y * 0.5;
         let row = find_row(cy);
         let row_cy = row_centers.get(row).copied().unwrap_or(cy);
 
         let key = (glyph.section_index, row);
         map.entry(key)
             .and_modify(|(min_x, max_x, _)| {
-                *min_x = min_x.min(glyph.position.x);
-                *max_x = max_x.max(glyph.position.x + gsize.x);
+                *min_x = min_x.min(pos.x);
+                *max_x = max_x.max(pos.x + gsize.x);
             })
-            .or_insert((glyph.position.x, glyph.position.x + gsize.x, row_cy));
+            .or_insert((pos.x, pos.x + gsize.x, row_cy));
     }
 
     map.into_iter()
@@ -739,10 +748,12 @@ fn build_span_rects(
 /// Convert screen-space cursor to local text node space.
 /// Returns `None` if cursor is outside the node bounds.
 ///
-/// PORT-0.17: `TextLayoutInfo` glyphs are in LOGICAL pixels now, so the whole
-/// hit-test runs in logical space: the cursor is already logical, and the node
-/// transform/size (physical) are divided by the scale factor instead of
-/// scaling the cursor up. Identical at scale=1, correct on HiDPI.
+/// The whole hit-test runs in LOGICAL space: the cursor is logical, the node
+/// transform/size (physical) are divided by the scale factor here, and the
+/// glyph rects are divided by it in `build_span_rects`. Identical at scale=1,
+/// correct on HiDPI. (The 0.3.0 assumption that glyphs were already logical
+/// was wrong for Bevy 0.19: only `TextLayoutInfo::size` is — glyph positions
+/// and atlas rects are physical.)
 fn cursor_to_local(
     cursor: Vec2,
     transform: &UiGlobalTransform,
@@ -796,7 +807,12 @@ fn hit_test_span_index(
     let local = cursor_to_local(cursor, transform, computed)?;
 
     let link_span_indices: Vec<usize> = hyper.link_spans.iter().map(|l| l.span_index).collect();
-    let rects = build_span_rects(layout, &link_span_indices, hyper.font_size);
+    let rects = build_span_rects(
+        layout,
+        &link_span_indices,
+        hyper.font_size,
+        computed.inverse_scale_factor(),
+    );
 
     for rect in &rects {
         if local.x >= rect.min.x
