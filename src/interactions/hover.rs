@@ -1,4 +1,4 @@
-use crate::core::{is_in_scope, UiAction, UiInputScope};
+use crate::core::{UiAction, UiInputScope, is_in_scope};
 use crate::widgets::Disabled;
 use bevy::prelude::*;
 use std::sync::Arc;
@@ -83,9 +83,10 @@ pub(crate) fn handle_hover_actions(
     for (entity, interaction, on_hover) in &query {
         if *interaction == Interaction::Hovered {
             if let Some(ref scope) = scope
-                && !is_in_scope(entity, scope, &parents) {
-                    continue;
-                }
+                && !is_in_scope(entity, scope, &parents)
+            {
+                continue;
+            }
             on_hover.execute(&mut commands);
         }
     }
@@ -108,9 +109,10 @@ pub(crate) fn handle_hover_exit_actions(
 
         if was_hovered && !is_hovered {
             if let Some(ref scope) = scope
-                && !is_in_scope(entity, scope, &parents) {
-                    continue;
-                }
+                && !is_in_scope(entity, scope, &parents)
+            {
+                continue;
+            }
             on_hover_exit.execute(&mut commands);
         }
     }
@@ -127,9 +129,10 @@ pub(crate) fn handle_press_actions(
     for (entity, interaction, on_press) in &query {
         if *interaction == Interaction::Pressed {
             if let Some(ref scope) = scope
-                && !is_in_scope(entity, scope, &parents) {
-                    continue;
-                }
+                && !is_in_scope(entity, scope, &parents)
+            {
+                continue;
+            }
             on_press.execute(&mut commands);
         }
     }

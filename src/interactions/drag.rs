@@ -1,4 +1,4 @@
-use crate::core::{is_in_scope, UiAction, UiInputScope, ZLayer};
+use crate::core::{UiAction, UiInputScope, ZLayer, is_in_scope};
 use crate::widgets::Disabled;
 use bevy::prelude::*;
 use bevy::ui::FocusPolicy;
@@ -160,9 +160,10 @@ pub(crate) fn drag_system(
             for (entity, interaction, _, _, _, _) in &draggables {
                 if *interaction == Interaction::Hovered || *interaction == Interaction::Pressed {
                     if let Some(ref scope) = scope
-                        && !is_in_scope(entity, scope, &scope_parents) {
-                            continue;
-                        }
+                        && !is_in_scope(entity, scope, &scope_parents)
+                    {
+                        continue;
+                    }
                     drag_state.phase = DragPhase::Pending;
                     drag_state.dragging = Some(entity);
                     drag_state.start_pos = cursor;
@@ -218,10 +219,11 @@ pub(crate) fn drag_system(
             // Update ghost position
             if let Some(cursor) = cursor_pos
                 && let Some(ghost_entity) = drag_state.ghost_entity
-                    && let Ok(mut node) = ghost_query.get_mut(ghost_entity) {
-                        node.left = Val::Px(cursor.x - ghost_style.size / 2.0);
-                        node.top = Val::Px(cursor.y - ghost_style.size / 2.0);
-                    }
+                && let Ok(mut node) = ghost_query.get_mut(ghost_entity)
+            {
+                node.left = Val::Px(cursor.x - ghost_style.size / 2.0);
+                node.top = Val::Px(cursor.y - ghost_style.size / 2.0);
+            }
 
             if !mouse.just_released(MouseButton::Left) {
                 return;
@@ -242,9 +244,10 @@ pub(crate) fn drag_system(
 
                 if *interaction == Interaction::Hovered || *interaction == Interaction::Pressed {
                     if let Some(ref scope) = scope
-                        && !is_in_scope(target_entity, scope, &scope_parents) {
-                            continue;
-                        }
+                        && !is_in_scope(target_entity, scope, &scope_parents)
+                    {
+                        continue;
+                    }
                     found_target = Some((target_entity, on_drop.map(|d| d.action.clone())));
                     break;
                 }

@@ -128,7 +128,7 @@ fn spawn_equip_slot(
 
     ec.with_children(|s| {
         let icon_size = SLOT_SIZE - ICON_PADDING * 2.0 - 2.0; // minus border
-                                                              // Icon image (always present, visibility toggled)
+        // Icon image (always present, visibility toggled)
         let mut icon_ec = s.spawn((
             ImageNode::default(),
             Node {
@@ -492,9 +492,10 @@ fn sync_slot_children(
     // Icon image (index 0)
     if let Some(&icon_entity) = child_list.first() {
         if let Ok(mut image) = image_query.get_mut(icon_entity)
-            && let Some(idx) = item {
-                image.image = asset_server.load(ITEMS[idx].icon);
-            }
+            && let Some(idx) = item
+        {
+            image.image = asset_server.load(ITEMS[idx].icon);
+        }
         if let Ok(mut vis) = vis_query.get_mut(icon_entity) {
             *vis = if has_item {
                 Visibility::Visible
@@ -522,13 +523,14 @@ fn sync_slot_children(
 
     // Label (index 2, only equip slots have it)
     if let Some(&label_entity) = child_list.get(2)
-        && let Ok(mut vis) = vis_query.get_mut(label_entity) {
-            *vis = if has_item {
-                Visibility::Hidden
-            } else {
-                Visibility::Visible
-            };
-        }
+        && let Ok(mut vis) = vis_query.get_mut(label_entity)
+    {
+        *vis = if has_item {
+            Visibility::Hidden
+        } else {
+            Visibility::Visible
+        };
+    }
 }
 
 // -- Drag highlight system --

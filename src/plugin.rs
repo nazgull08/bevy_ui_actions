@@ -1,33 +1,33 @@
-use crate::core::{resolve_ui_theme, ButtonStyle, UiTheme};
+use crate::core::{ButtonStyle, UiTheme, resolve_ui_theme};
 use crate::interactions::{
-    drag_system, handle_clicks, handle_hover_actions, handle_hover_exit_actions,
-    handle_press_actions, handle_right_clicks, has_draggables, DragGhostStyle, DragState,
+    DragGhostStyle, DragState, drag_system, handle_clicks, handle_hover_actions,
+    handle_hover_exit_actions, handle_press_actions, handle_right_clicks, has_draggables,
 };
 use crate::widgets::{
-    apply_append_text, apply_initial_visited_colors, apply_set_choices, apply_topic_lock_dimming,
-    apply_window_z, clamp_scroll_bounds, cleanup_windows, dismiss_on_close_request,
-    handle_choice_clicks, handle_choice_hotkeys, handle_close_button_clicks,
-    handle_dialogue_close_input, handle_dialogue_dismiss_event, handle_dismiss_event,
-    handle_modal_dismiss, handle_scroll_input, handle_scrollbar_drag, handle_tab_clicks,
-    handle_topic_container, handle_topic_panel_clicks, handle_track_click, has_dialogue,
-    has_hypertext, has_scroll_views, has_sliders, hide_tooltip, hypertext_click, hypertext_hover,
-    process_dialogue_queue, process_modal_queue, register_windows, reveal_modal_panel,
-    should_hide_tooltip, should_show_tooltip, show_tooltip, slider_drag, sync_active_tab_marker,
+    ActiveTopic, AppendDialogueText, DialogueChoiceSelected, DialogueCloseRequested, DialogueQueue,
+    DialogueStyle, DialogueTopicsLocked, DismissDialogueEvent, DismissModalEvent, HyperLinkClicked,
+    ListItemSelected, ModalQueue, ModalStyle, ScrollbarDragState, SetDialogueChoices,
+    SliderChanged, SliderDragState, TooltipSet, TooltipState, TooltipStyle, TopicDiscovered,
+    WindowDragState, WindowManager, apply_append_text, apply_initial_visited_colors,
+    apply_set_choices, apply_topic_lock_dimming, apply_window_z, clamp_scroll_bounds,
+    cleanup_windows, dismiss_on_close_request, handle_choice_clicks, handle_choice_hotkeys,
+    handle_close_button_clicks, handle_dialogue_close_input, handle_dialogue_dismiss_event,
+    handle_dismiss_event, handle_modal_dismiss, handle_scroll_input, handle_scrollbar_drag,
+    handle_tab_clicks, handle_topic_container, handle_topic_panel_clicks, handle_track_click,
+    has_dialogue, has_hypertext, has_scroll_views, has_sliders, hide_tooltip, hypertext_click,
+    hypertext_hover, position_tooltip, process_dialogue_queue, process_modal_queue,
+    refresh_tooltip, register_windows, reveal_modal_panel, should_hide_tooltip,
+    should_show_tooltip, show_tooltip, slider_drag, sync_active_tab_marker,
     sync_tab_content_visibility, track_active_topic, update_border_visuals,
     update_choice_button_visuals, update_interactive_visuals, update_progress_bars,
     update_scrollbar_thumb, update_slider_visuals, update_tooltip_hover,
     update_topic_button_colors, update_topic_panel, update_visited_link_colors,
     window_close_on_escape, window_close_system, window_focus_system, window_move_system,
-    ActiveTopic, AppendDialogueText, DialogueChoiceSelected, DialogueCloseRequested, DialogueQueue,
-    DialogueStyle, DialogueTopicsLocked, DismissDialogueEvent, DismissModalEvent, HyperLinkClicked,
-    ListItemSelected, ModalQueue, ModalStyle, ScrollbarDragState, SetDialogueChoices,
-    SliderChanged, SliderDragState, TooltipSet, TooltipState, TooltipStyle, TopicDiscovered,
-    WindowDragState, WindowManager,
 };
 #[cfg(feature = "viewport3d")]
 use crate::widgets::{
-    has_viewports, viewport3d_cleanup, viewport3d_drag_rotate, viewport3d_track,
-    Viewport3dDragState, Viewport3dTracked,
+    Viewport3dDragState, Viewport3dTracked, has_viewports, viewport3d_cleanup,
+    viewport3d_drag_rotate, viewport3d_track,
 };
 use bevy::prelude::*;
 
@@ -68,6 +68,7 @@ impl Plugin for UiActionsPlugin {
                     TooltipSet::DetectHover,
                     TooltipSet::GenerateContent,
                     TooltipSet::Display,
+                    TooltipSet::Position,
                 )
                     .chain(),
             )
@@ -86,9 +87,10 @@ impl Plugin for UiActionsPlugin {
                     // Tooltips
                     (
                         update_tooltip_hover.in_set(TooltipSet::DetectHover),
-                        show_tooltip
-                            .run_if(should_show_tooltip)
+                        (refresh_tooltip, show_tooltip.run_if(should_show_tooltip))
+                            .chain()
                             .in_set(TooltipSet::Display),
+                        position_tooltip.in_set(TooltipSet::Position),
                         hide_tooltip
                             .run_if(should_hide_tooltip)
                             .in_set(TooltipSet::Display),

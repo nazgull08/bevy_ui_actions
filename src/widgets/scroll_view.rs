@@ -1,4 +1,4 @@
-use crate::core::{is_in_scope, UiInputScope};
+use crate::core::{UiInputScope, is_in_scope};
 use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
 use bevy::prelude::*;
 use bevy::ui::UiGlobalTransform;
@@ -115,6 +115,8 @@ impl SpawnScrollViewExt for ChildSpawnerCommands<'_> {
             Node {
                 width: config.width,
                 height: config.height,
+                min_width: Val::Px(0.0),
+                min_height: Val::Px(0.0),
                 overflow,
                 flex_direction: direction,
                 ..default()
@@ -156,6 +158,7 @@ impl SpawnScrollViewExt for ChildSpawnerCommands<'_> {
                 width: config.width,
                 height: config.height,
                 min_height: Val::Px(0.0),
+                min_width: Val::Px(0.0),
                 flex_direction: FlexDirection::Row,
                 ..default()
             })
@@ -166,6 +169,7 @@ impl SpawnScrollViewExt for ChildSpawnerCommands<'_> {
         let scroll_node = Node {
             flex_grow: 1.0,
             height: Val::Percent(100.0),
+            min_width: Val::Px(0.0),
             min_height: Val::Px(0.0),
             overflow,
             flex_direction: direction,
@@ -205,6 +209,7 @@ impl SpawnScrollViewExt for ChildSpawnerCommands<'_> {
                 },
                 Node {
                     width: Val::Px(scrollbar_width),
+                    flex_shrink: 0.0,
                     height: Val::Percent(100.0),
                     ..default()
                 },
@@ -253,6 +258,8 @@ impl SpawnScrollViewExt for Commands<'_, '_> {
             Node {
                 width: config.width,
                 height: config.height,
+                min_width: Val::Px(0.0),
+                min_height: Val::Px(0.0),
                 overflow,
                 flex_direction: direction,
                 ..default()
@@ -293,6 +300,7 @@ impl SpawnScrollViewExt for Commands<'_, '_> {
                 width: config.width,
                 height: config.height,
                 min_height: Val::Px(0.0),
+                min_width: Val::Px(0.0),
                 flex_direction: FlexDirection::Row,
                 ..default()
             })
@@ -305,6 +313,8 @@ impl SpawnScrollViewExt for Commands<'_, '_> {
                 Node {
                     flex_grow: 1.0,
                     height: Val::Percent(100.0),
+                    min_width: Val::Px(0.0),
+                    min_height: Val::Px(0.0),
                     overflow,
                     flex_direction: direction,
                     ..default()
@@ -332,6 +342,7 @@ impl SpawnScrollViewExt for Commands<'_, '_> {
                 },
                 Node {
                     width: Val::Px(scrollbar_width),
+                    flex_shrink: 0.0,
                     height: Val::Percent(100.0),
                     ..default()
                 },
@@ -418,21 +429,29 @@ pub(crate) fn handle_scroll_input(
 ) {
     let mut total_x: f32 = 0.0;
     let mut total_y: f32 = 0.0;
+    let mut pixel_delta = Vec2::ZERO;
 
     for event in wheel_events.read() {
         let (dx, dy) = match event.unit {
             MouseScrollUnit::Line => (event.x, event.y),
-            MouseScrollUnit::Pixel => (event.x / 40.0, event.y / 40.0),
+            MouseScrollUnit::Pixel => {
+                pixel_delta += Vec2::new(event.x, event.y);
+                (0.0, 0.0)
+            }
         };
         total_x += dx;
         total_y += dy;
     }
 
-    if total_x == 0.0 && total_y == 0.0 {
+    if total_x == 0.0 && total_y == 0.0 && pixel_delta == Vec2::ZERO {
         return;
     }
 
-    let Some(cursor) = windows.single().ok().and_then(|w| w.cursor_position()) else {
+    let Some(cursor) = windows
+        .single()
+        .ok()
+        .and_then(|w| w.physical_cursor_position())
+    else {
         return;
     };
 
@@ -442,22 +461,25 @@ pub(crate) fn handle_scroll_input(
         }
 
         if let Some(ref scope) = scope
-            && !is_in_scope(entity, scope, &parents) {
-                continue;
-            }
+            && !is_in_scope(entity, scope, &parents)
+        {
+            continue;
+        }
 
         let speed = scroll_view.scroll_speed;
+        let delta = Vec2::new(total_x, total_y) * speed
+            + pixel_delta * computed.inverse_scale_factor() * (speed / 40.0);
 
         match scroll_view.direction {
             ScrollDirection::Vertical => {
-                scroll_pos.0.y -= total_y * speed;
+                scroll_pos.0.y -= delta.y;
             }
             ScrollDirection::Horizontal => {
-                scroll_pos.0.x -= total_x * speed;
+                scroll_pos.0.x -= delta.x;
             }
             ScrollDirection::Both => {
-                scroll_pos.0.x -= total_x * speed;
-                scroll_pos.0.y -= total_y * speed;
+                scroll_pos.0.x -= delta.x;
+                scroll_pos.0.y -= delta.y;
             }
         }
 
@@ -499,220 +521,218 @@ impl Default for StickToBottom {
     }
 }
 
-/// Clamps scroll position to valid bounds (0..max_scroll).
-///
-/// While a [`StickToBottom`] latch is present, `offset_y` is pinned to the
-/// freshly-measured bottom instead (following appended content across the frames
-/// it takes for layout to settle), then the latch is removed.
-#[allow(clippy::type_complexity)]
+/// Layout metrics in the logical units used by `ScrollPosition` and `Val::Px`.
+/// Use Bevy's own layout extent rather than summing children: flex gaps, padding,
+/// margins, wrapping, grids and nested content are already included by layout.
+#[derive(Clone, Copy)]
+struct ScrollMetrics {
+    viewport: Vec2,
+    max_scroll: Vec2,
+}
+
+impl ScrollMetrics {
+    fn from_node(node: &ComputedNode) -> Option<Self> {
+        if node.is_empty() {
+            return None;
+        }
+        let inverse_scale = node.inverse_scale_factor();
+        // This is the same physical offset bound used by Bevy's ui_layout_system.
+        let viewport = (node.size() - node.scrollbar_size).max(Vec2::ZERO);
+        Some(Self {
+            viewport: viewport * inverse_scale,
+            max_scroll: (node.content_size() - viewport).max(Vec2::ZERO) * inverse_scale,
+        })
+    }
+
+    fn thumb(self, track_height: f32, offset: f32) -> Option<(f32, f32)> {
+        if self.max_scroll.y <= 0.0 || track_height <= 0.0 {
+            return None;
+        }
+        let content_height = self.viewport.y + self.max_scroll.y;
+        let visible_ratio = (self.viewport.y / content_height).clamp(0.05, 1.0);
+        let height = (track_height * visible_ratio).max(20.0).min(track_height);
+        let top = (offset / self.max_scroll.y).clamp(0.0, 1.0) * (track_height - height);
+        Some((height, top))
+    }
+}
+
+/// Clamp both axes using the same extent as layout and scrollbar consumers.
+/// Hidden nodes preserve their offset and pending StickToBottom latch.
 pub(crate) fn clamp_scroll_bounds(
     mut commands: Commands,
-    mut query: Query<(
-        Entity,
-        &ScrollView,
-        &mut ScrollPosition,
-        &ComputedNode,
-        &Children,
-        Option<&mut StickToBottom>,
-    )>,
-    child_nodes: Query<&ComputedNode, Without<ScrollView>>,
+    mut query: Query<
+        (
+            Entity,
+            &mut ScrollPosition,
+            &ComputedNode,
+            Option<&mut StickToBottom>,
+        ),
+        With<ScrollView>,
+    >,
 ) {
-    for (entity, scroll_view, mut scroll_pos, viewport_node, children, stick) in &mut query {
-        let viewport_size = viewport_node.size();
-
-        // Skip clamping when node is hidden (Display::None → size is 0)
-        if viewport_size.x <= 0.0 && viewport_size.y <= 0.0 {
+    for (entity, mut scroll_pos, node, stick) in &mut query {
+        let Some(metrics) = ScrollMetrics::from_node(node) else {
             continue;
-        }
-
-        // Calculate total content size from children
-        let mut content_width: f32 = 0.0;
-        let mut content_height: f32 = 0.0;
-
-        for child in children.iter() {
-            if let Ok(child_node) = child_nodes.get(child) {
-                let child_size = child_node.size();
-                match scroll_view.direction {
-                    ScrollDirection::Vertical => {
-                        content_height += child_size.y;
-                        content_width = content_width.max(child_size.x);
-                    }
-                    ScrollDirection::Horizontal => {
-                        content_width += child_size.x;
-                        content_height = content_height.max(child_size.y);
-                    }
-                    ScrollDirection::Both => {
-                        content_height += child_size.y;
-                        content_width = content_width.max(child_size.x);
-                    }
-                }
-            }
-        }
-
-        let max_scroll_x = (content_width - viewport_size.x).max(0.0);
-        let max_scroll_y = (content_height - viewport_size.y).max(0.0);
-
-        scroll_pos.0.x = scroll_pos.0.x.clamp(0.0, max_scroll_x);
-
+        };
+        scroll_pos.0.x = scroll_pos.0.x.clamp(0.0, metrics.max_scroll.x);
         if let Some(mut stick) = stick {
-            // Follow the tail while appended content settles into layout.
-            scroll_pos.0.y = max_scroll_y;
+            scroll_pos.0.y = metrics.max_scroll.y;
             if stick.frames <= 1 {
                 commands.entity(entity).remove::<StickToBottom>();
             } else {
                 stick.frames -= 1;
             }
         } else {
-            scroll_pos.0.y = scroll_pos.0.y.clamp(0.0, max_scroll_y);
+            scroll_pos.0.y = scroll_pos.0.y.clamp(0.0, metrics.max_scroll.y);
         }
     }
 }
 
-/// Updates scrollbar thumb position and size based on scroll state.
+/// Updates the vertical scrollbar from the same layout metrics as clamping.
 pub(crate) fn update_scrollbar_thumb(
-    scroll_query: Query<(&ScrollPosition, &ComputedNode, &Children), With<ScrollView>>,
-    child_nodes: Query<&ComputedNode, Without<ScrollView>>,
+    scroll_query: Query<(&ScrollPosition, &ComputedNode), With<ScrollView>>,
     track_query: Query<&ComputedNode, With<ScrollbarTrack>>,
     mut thumb_query: Query<(&ScrollbarThumb, &mut Node, &ChildOf)>,
 ) {
     for (thumb, mut thumb_node, child_of) in &mut thumb_query {
-        let Ok((scroll_pos, viewport_node, children)) = scroll_query.get(thumb.scroll_view) else {
+        let Ok((scroll_pos, viewport_node)) = scroll_query.get(thumb.scroll_view) else {
             continue;
         };
-
-        // Get track height from thumb's parent (the track)
         let Ok(track_node) = track_query.get(child_of.parent()) else {
             continue;
         };
-
-        let viewport_height = viewport_node.size().y;
-        let track_height = track_node.size().y;
-
-        if track_height <= 0.0 || viewport_height <= 0.0 {
+        let Some(metrics) = ScrollMetrics::from_node(viewport_node) else {
             continue;
-        }
-
-        // Calculate content height
-        let mut content_height: f32 = 0.0;
-        for child in children.iter() {
-            if let Ok(child_node) = child_nodes.get(child) {
-                content_height += child_node.size().y;
-            }
-        }
-
-        if content_height <= viewport_height {
-            // No scrolling needed — hide thumb
-            thumb_node.height = Val::Px(0.0);
-            continue;
-        }
-
-        // Thumb height proportional to visible ratio
-        let visible_ratio = (viewport_height / content_height).clamp(0.05, 1.0);
-        let thumb_height = (track_height * visible_ratio).max(20.0);
-
-        // Thumb position proportional to scroll offset
-        let max_scroll = content_height - viewport_height;
-        let scroll_ratio = if max_scroll > 0.0 {
-            scroll_pos.0.y / max_scroll
-        } else {
-            0.0
         };
-        let max_thumb_top = track_height - thumb_height;
-        let thumb_top = scroll_ratio * max_thumb_top;
-
-        thumb_node.height = Val::Px(thumb_height);
-        thumb_node.top = Val::Px(thumb_top);
+        let track_height = track_node.size().y * track_node.inverse_scale_factor();
+        if track_height <= 0.0 {
+            continue;
+        }
+        let (height, top) = metrics
+            .thumb(track_height, scroll_pos.0.y)
+            .unwrap_or((0.0, 0.0));
+        thumb_node.height = Val::Px(height);
+        thumb_node.top = Val::Px(top);
     }
 }
 
-/// Handles scrollbar thumb dragging.
+/// Handles vertical scrollbar thumb dragging in logical UI coordinates.
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn handle_scrollbar_drag(
     mouse: Res<ButtonInput<MouseButton>>,
     windows: Query<&Window>,
     mut drag_state: ResMut<ScrollbarDragState>,
+    mut drag_scale: Local<Option<f32>>,
     thumb_query: Query<(&Interaction, &ScrollbarThumb, &ChildOf)>,
     track_query: Query<&ComputedNode, With<ScrollbarTrack>>,
-    mut scroll_query: Query<(&mut ScrollPosition, &ComputedNode, &Children), With<ScrollView>>,
-    child_nodes: Query<&ComputedNode, (Without<ScrollView>, Without<ScrollbarTrack>)>,
+    mut scroll_query: Query<(&mut ScrollPosition, &ComputedNode), With<ScrollView>>,
     scope: Option<Res<UiInputScope>>,
     parents: Query<&ChildOf>,
 ) {
-    let cursor_y = windows
+    let Some(cursor) = windows
         .single()
         .ok()
-        .and_then(|w| w.cursor_position())
-        .map(|p| p.y)
-        .unwrap_or(0.0);
-
-    // Start drag
+        .filter(|w| w.focused)
+        .and_then(|w| w.physical_cursor_position())
+    else {
+        drag_state.dragging = None;
+        return;
+    };
     if mouse.just_pressed(MouseButton::Left) && drag_state.dragging.is_none() {
         for (interaction, thumb, child_of) in &thumb_query {
-            if *interaction == Interaction::Pressed || *interaction == Interaction::Hovered {
-                let scroll_entity = thumb.scroll_view;
-
-                if let Some(ref scope) = scope
-                    && !is_in_scope(scroll_entity, scope, &parents) {
-                        continue;
-                    }
-
-                let Ok((scroll_pos, viewport_node, children)) = scroll_query.get(scroll_entity)
-                else {
-                    continue;
-                };
-
-                let Ok(track_node) = track_query.get(child_of.parent()) else {
-                    continue;
-                };
-
-                // Calculate content height and max scroll
-                let viewport_height = viewport_node.size().y;
-                let mut content_height: f32 = 0.0;
-                for child in children.iter() {
-                    if let Ok(child_node) = child_nodes.get(child) {
-                        content_height += child_node.size().y;
-                    }
-                }
-                let max_scroll = (content_height - viewport_height).max(0.0);
-                let track_height = track_node.size().y;
-                let visible_ratio = (viewport_height / content_height).clamp(0.05, 1.0);
-                let thumb_height = (track_height * visible_ratio).max(20.0);
-                let usable_track = (track_height - thumb_height).max(1.0);
-
-                drag_state.dragging = Some(scroll_entity);
-                drag_state.start_mouse_y = cursor_y;
-                drag_state.start_scroll_offset = scroll_pos.0.y;
-                drag_state.max_scroll = max_scroll;
-                drag_state.usable_track = usable_track;
-                break;
+            if *interaction != Interaction::Pressed && *interaction != Interaction::Hovered {
+                continue;
             }
+            let entity = thumb.scroll_view;
+            if let Some(ref scope) = scope
+                && !is_in_scope(entity, scope, &parents)
+            {
+                continue;
+            }
+            let Ok((scroll_pos, node)) = scroll_query.get(entity) else {
+                continue;
+            };
+            let Some(metrics) = ScrollMetrics::from_node(node) else {
+                continue;
+            };
+            let Ok(track) = track_query.get(child_of.parent()) else {
+                continue;
+            };
+            let track_height = track.size().y * track.inverse_scale_factor();
+            let Some((thumb_height, _)) = metrics.thumb(track_height, scroll_pos.0.y) else {
+                continue;
+            };
+            let usable_track = track_height - thumb_height;
+            if usable_track <= 0.0 {
+                continue;
+            }
+            *drag_scale = Some(node.inverse_scale_factor());
+            drag_state.dragging = Some(entity);
+            drag_state.start_mouse_y = cursor.y * node.inverse_scale_factor();
+            drag_state.start_scroll_offset = scroll_pos.0.y;
+            drag_state.max_scroll = metrics.max_scroll.y;
+            drag_state.usable_track = usable_track;
+            break;
         }
     }
-
-    // Continue drag
-    if let Some(scroll_entity) = drag_state.dragging {
-        if mouse.pressed(MouseButton::Left) {
-            let delta_mouse = cursor_y - drag_state.start_mouse_y;
-
-            if drag_state.usable_track > 0.0 && drag_state.max_scroll > 0.0 {
-                // Convert pixel mouse delta to scroll delta (1:1 with thumb movement)
-                let scroll_delta = delta_mouse * (drag_state.max_scroll / drag_state.usable_track);
-                let new_offset = (drag_state.start_scroll_offset + scroll_delta)
-                    .clamp(0.0, drag_state.max_scroll);
-
-                if let Ok((mut scroll_pos, _, _)) = scroll_query.get_mut(scroll_entity) {
-                    scroll_pos.0.y = new_offset;
-                }
-            }
-        } else {
-            // Mouse released
+    if let Some(entity) = drag_state.dragging {
+        if !mouse.pressed(MouseButton::Left) {
             drag_state.dragging = None;
+            return;
+        }
+        if let Some(ref scope) = scope
+            && !is_in_scope(entity, scope, &parents)
+        {
+            drag_state.dragging = None;
+            return;
+        }
+        let Ok((mut scroll_pos, node)) = scroll_query.get_mut(entity) else {
+            drag_state.dragging = None;
+            return;
+        };
+        let Some(metrics) = ScrollMetrics::from_node(node) else {
+            drag_state.dragging = None;
+            return;
+        };
+        let cursor_y = cursor.y * node.inverse_scale_factor();
+        let Some((_, _, child_of)) = thumb_query
+            .iter()
+            .find(|(_, thumb, _)| thumb.scroll_view == entity)
+        else {
+            drag_state.dragging = None;
+            return;
+        };
+        let Ok(track) = track_query.get(child_of.parent()) else {
+            drag_state.dragging = None;
+            return;
+        };
+        let track_height = track.size().y * track.inverse_scale_factor();
+        let Some((height, _)) = metrics.thumb(track_height, scroll_pos.0.y) else {
+            drag_state.dragging = None;
+            return;
+        };
+        let usable_track = track_height - height;
+        // Rebase a held drag when resizing/content updates change its mapping.
+        if *drag_scale != Some(node.inverse_scale_factor())
+            || (usable_track - drag_state.usable_track).abs() > 0.01
+            || (metrics.max_scroll.y - drag_state.max_scroll).abs() > 0.01
+        {
+            *drag_scale = Some(node.inverse_scale_factor());
+            drag_state.start_mouse_y = cursor_y;
+            drag_state.start_scroll_offset = scroll_pos.0.y.clamp(0.0, metrics.max_scroll.y);
+            drag_state.max_scroll = metrics.max_scroll.y;
+            drag_state.usable_track = usable_track;
+        }
+        if drag_state.usable_track > 0.0 && drag_state.max_scroll > 0.0 {
+            let delta = (cursor_y - drag_state.start_mouse_y)
+                * (drag_state.max_scroll / drag_state.usable_track);
+            scroll_pos.0.y =
+                (drag_state.start_scroll_offset + delta).clamp(0.0, metrics.max_scroll.y);
         }
     }
 }
 
-/// Handles clicking on the scrollbar track (page up/down).
-/// Clicking above the thumb scrolls up by one viewport, below scrolls down.
+/// Page above/below the actual thumb, never when clicking inside its bounds.
 #[allow(clippy::type_complexity, clippy::too_many_arguments)]
 pub(crate) fn handle_track_click(
     mouse: Res<ButtonInput<MouseButton>>,
@@ -728,77 +748,46 @@ pub(crate) fn handle_track_click(
         ),
         Without<ScrollView>,
     >,
-    mut scroll_query: Query<(&mut ScrollPosition, &ComputedNode, &Children), With<ScrollView>>,
-    child_nodes: Query<&ComputedNode, (Without<ScrollView>, Without<ScrollbarTrack>)>,
+    mut scroll_query: Query<(&mut ScrollPosition, &ComputedNode), With<ScrollView>>,
     scope: Option<Res<UiInputScope>>,
     scope_parents: Query<&ChildOf>,
 ) {
-    // Don't handle track clicks while thumb is being dragged
-    if drag_state.dragging.is_some() {
+    if drag_state.dragging.is_some() || !mouse.just_pressed(MouseButton::Left) {
         return;
     }
-
-    if !mouse.just_pressed(MouseButton::Left) {
-        return;
-    }
-
-    let Some(cursor_y) = windows
+    let Some(cursor) = windows
         .single()
         .ok()
-        .and_then(|w| w.cursor_position())
-        .map(|p| p.y)
+        .and_then(|w| w.physical_cursor_position())
     else {
         return;
     };
-
-    for (entity, interaction, track, track_transform, track_node) in &track_query {
+    for (entity, interaction, track, transform, track_node) in &track_query {
         if *interaction != Interaction::Pressed && *interaction != Interaction::Hovered {
             continue;
         }
-
         if let Some(ref scope) = scope
-            && !is_in_scope(entity, scope, &scope_parents) {
-                continue;
-            }
-
-        let Ok((mut scroll_pos, viewport_node, children)) = scroll_query.get_mut(track.scroll_view)
-        else {
+            && !is_in_scope(entity, scope, &scope_parents)
+        {
+            continue;
+        }
+        let Ok((mut scroll_pos, node)) = scroll_query.get_mut(track.scroll_view) else {
             continue;
         };
-
-        let viewport_height = viewport_node.size().y;
-        let track_height = track_node.size().y;
-
-        if track_height <= 0.0 || viewport_height <= 0.0 {
+        let Some(metrics) = ScrollMetrics::from_node(node) else {
             continue;
-        }
-
-        // Content height
-        let mut content_height: f32 = 0.0;
-        for child in children.iter() {
-            if let Ok(child_node) = child_nodes.get(child) {
-                content_height += child_node.size().y;
-            }
-        }
-        let max_scroll = (content_height - viewport_height).max(0.0);
-        if max_scroll <= 0.0 {
+        };
+        let track_height = track_node.size().y * track_node.inverse_scale_factor();
+        let Some((height, top)) = metrics.thumb(track_height, scroll_pos.0.y) else {
             continue;
+        };
+        let physical_top = transform.translation.y - track_node.size().y / 2.0;
+        let click_y = (cursor.y - physical_top) * track_node.inverse_scale_factor();
+        if click_y < top {
+            scroll_pos.0.y = (scroll_pos.0.y - metrics.viewport.y).max(0.0);
+        } else if click_y > top + height {
+            scroll_pos.0.y = (scroll_pos.0.y + metrics.viewport.y).min(metrics.max_scroll.y);
         }
-
-        // Where on the track did we click? (0.0 = top, 1.0 = bottom)
-        let track_top = track_transform.translation.y - track_height / 2.0;
-        let click_ratio = ((cursor_y - track_top) / track_height).clamp(0.0, 1.0);
-
-        // Where is the thumb currently? (ratio)
-        let current_ratio = scroll_pos.0.y / max_scroll;
-
-        // Page scroll: move by viewport_height in the appropriate direction
-        if click_ratio < current_ratio {
-            scroll_pos.0.y = (scroll_pos.0.y - viewport_height).max(0.0);
-        } else {
-            scroll_pos.0.y = (scroll_pos.0.y + viewport_height).min(max_scroll);
-        }
-
         break;
     }
 }
@@ -806,4 +795,51 @@ pub(crate) fn handle_track_click(
 /// Run condition: returns true when any ScrollView entities exist.
 pub fn has_scroll_views(query: Query<(), With<ScrollView>>) -> bool {
     !query.is_empty()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn layout_extent_matches_scaled_engine_scroll_bound() {
+        let node = ComputedNode {
+            size: Vec2::new(300.0, 180.0),
+            content_size: Vec2::new(540.0, 750.0),
+            scrollbar_size: Vec2::new(15.0, 0.0),
+            inverse_scale_factor: 2.0 / 3.0,
+            ..default()
+        };
+        let metrics = ScrollMetrics::from_node(&node).unwrap();
+        assert_eq!(metrics.viewport, Vec2::new(190.0, 120.0));
+        assert_eq!(metrics.max_scroll, Vec2::new(170.0, 380.0));
+    }
+
+    #[test]
+    fn empty_layout_has_no_scroll_range_or_thumb() {
+        let metrics = ScrollMetrics::from_node(&ComputedNode {
+            size: Vec2::new(200.0, 120.0),
+            content_size: Vec2::ZERO,
+            inverse_scale_factor: 1.0,
+            ..default()
+        })
+        .unwrap();
+        assert_eq!(metrics.max_scroll, Vec2::ZERO);
+        assert!(metrics.thumb(120.0, 20.0).is_none());
+    }
+
+    #[test]
+    fn hidden_layout_skips_scroll_mutation() {
+        assert!(ScrollMetrics::from_node(&ComputedNode::default()).is_none());
+    }
+
+    #[test]
+    fn short_track_thumb_cannot_extend_outside_track() {
+        let metrics = ScrollMetrics {
+            viewport: Vec2::new(100.0, 100.0),
+            max_scroll: Vec2::new(0.0, 900.0),
+        };
+        assert_eq!(metrics.thumb(12.0, 900.0), Some((12.0, 0.0)));
+        assert_eq!(metrics.thumb(100.0, 900.0), Some((20.0, 80.0)));
+    }
 }

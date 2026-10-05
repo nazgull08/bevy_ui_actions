@@ -377,10 +377,11 @@ pub(crate) fn hypertext_hover(
 
         // Restore old hovered span to link_color (or visited_link_color)
         if let Some(old_idx) = old
-            && let Some(link) = hyper.link_spans.iter().find(|l| l.span_index == old_idx) {
-                let color = resolve_link_color(hyper, &link.topic, registry.as_deref());
-                set_span_color(old_idx, color, children, &mut span_colors);
-            }
+            && let Some(link) = hyper.link_spans.iter().find(|l| l.span_index == old_idx)
+        {
+            let color = resolve_link_color(hyper, &link.topic, registry.as_deref());
+            set_span_color(old_idx, color, children, &mut span_colors);
+        }
 
         // Set new hovered span to hover_color
         if let Some(new_idx) = hovered_span {
@@ -397,9 +398,10 @@ fn resolve_link_color(
 ) -> Color {
     if let Some(visited_color) = hyper.visited_link_color
         && let Some(reg) = registry
-            && reg.is_discovered(topic) {
-                return visited_color;
-            }
+        && reg.is_discovered(topic)
+    {
+        return visited_color;
+    }
     hyper.link_color
 }
 
@@ -849,9 +851,10 @@ fn set_span_color(
 
     let child_index = span_index - 1;
     if let Some(&child_entity) = children.iter().collect::<Vec<_>>().get(child_index)
-        && let Ok(mut text_color) = span_colors.get_mut(child_entity) {
-            text_color.0 = color;
-        }
+        && let Ok(mut text_color) = span_colors.get_mut(child_entity)
+    {
+        text_color.0 = color;
+    }
 }
 
 // ============================================================

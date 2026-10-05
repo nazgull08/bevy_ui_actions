@@ -22,10 +22,12 @@
 //!     .build();
 //! ```
 
+use super::{ScrollDirection, ScrollView};
 use bevy::prelude::*;
+use bevy::ui::FocusPolicy;
 
-use crate::core::ZLayer;
 use crate::DragState;
+use crate::core::ZLayer;
 
 // ============================================================
 // System Sets
@@ -44,6 +46,8 @@ pub enum TooltipSet {
     GenerateContent,
     /// Show/hide tooltip UI based on content and delay
     Display,
+    /// Fit measured tooltips to the UI viewport.
+    Position,
 }
 
 // ============================================================
@@ -433,10 +437,16 @@ pub fn should_hide_tooltip(state: Res<TooltipState>, drag: Res<DragState>) -> bo
 /// Note: This tracks ANY entity with Tooltip component that is hovered,
 /// regardless of whether content is empty. The content check happens in show_tooltip.
 /// This allows external systems to populate content dynamically before display.
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn update_tooltip_hover(
     query: Query<(Entity, &Interaction), With<Tooltip>>,
     mut tooltip_state: ResMut<TooltipState>,
     time: Res<Time>,
+    windows: Query<&Window>,
+    roots: Query<(&ComputedNode, &UiGlobalTransform), With<TooltipUI>>,
+    nodes: Query<(&Node, Option<&ChildOf>)>,
+    drag: Res<DragState>,
+    mut leave_timer: Local<f32>,
     mut commands: Commands,
 ) {
     let mut found_hovered: Option<Entity> = None;
@@ -448,6 +458,44 @@ pub(crate) fn update_tooltip_hover(
         }
     }
 
+    if found_hovered.is_some() {
+        *leave_timer = 0.0;
+    }
+    // Keep a visible tip readable/scrollable while the pointer is inside it.
+    // Its source must still exist and belong to a visible layout subtree.
+    if found_hovered.is_none()
+        && !drag.is_dragging()
+        && let (Some(source), Some(root)) = (tooltip_state.hovered, tooltip_state.tooltip_entity)
+    {
+        let mut current = source;
+        let mut valid = query.get(source).is_ok();
+        while let Ok((node, parent)) = nodes.get(current) {
+            if node.display == Display::None {
+                valid = false;
+                break;
+            }
+            let Some(parent) = parent else {
+                break;
+            };
+            current = parent.parent();
+        }
+        if valid
+            && let (Ok(window), Ok((computed, transform))) = (windows.single(), roots.get(root))
+            && let Some(cursor) = window.cursor_position()
+        {
+            let delta = cursor * window.scale_factor() - transform.translation;
+            if delta.abs().cmple(computed.size() * 0.5).all() {
+                *leave_timer = 0.0;
+                found_hovered = Some(source);
+            } else {
+                // A short grace period lets the pointer cross the gap.
+                *leave_timer += time.delta_secs();
+                if *leave_timer < 0.15 {
+                    found_hovered = Some(source);
+                }
+            }
+        }
+    }
     match found_hovered {
         Some(entity) => {
             if tooltip_state.hovered == Some(entity) {
@@ -536,6 +584,13 @@ fn spawn_tooltip_ui(
     commands
         .spawn((
             TooltipUI,
+            Visibility::Hidden,
+            FocusPolicy::Block,
+            ScrollView {
+                direction: ScrollDirection::Vertical,
+                scroll_speed: 40.0,
+            },
+            ScrollPosition::default(),
             Node {
                 position_type: PositionType::Absolute,
                 left: Val::Px(cursor_pos.x + 12.0),
@@ -544,6 +599,10 @@ fn spawn_tooltip_ui(
                 flex_direction: FlexDirection::Column,
                 row_gap: Val::Px(style.section_gap),
                 max_width: Val::Px(style.max_width),
+                overflow: Overflow {
+                    x: OverflowAxis::Clip,
+                    y: OverflowAxis::Scroll,
+                },
                 border: UiRect::all(Val::Px(style.border_width)),
                 ..default()
             },
@@ -552,7 +611,18 @@ fn spawn_tooltip_ui(
             GlobalZIndex(ZLayer::Tooltip.z()),
         ))
         .with_children(|parent| {
-            spawn_tooltip_content(parent, content, style);
+            parent
+                .spawn(Node {
+                    width: Val::Percent(100.0),
+                    min_width: Val::Px(0.0),
+                    flex_direction: FlexDirection::Column,
+                    flex_shrink: 0.0,
+                    row_gap: Val::Px(style.section_gap),
+                    ..default()
+                })
+                .with_children(|content_root| {
+                    spawn_tooltip_content(content_root, content, style);
+                });
         })
         .id()
 }
@@ -709,5 +779,78 @@ fn spawn_section(
                 ..default()
             });
         }
+    }
+}
+
+/// Refresh changed content without restarting the hover delay.
+pub(crate) fn refresh_tooltip(
+    changed: Query<&Tooltip, Changed<Tooltip>>,
+    mut state: ResMut<TooltipState>,
+    mut commands: Commands,
+) {
+    if state.visible
+        && state
+            .hovered
+            .is_some_and(|source| changed.get(source).is_ok())
+    {
+        if let Some(entity) = state.tooltip_entity.take() {
+            commands.entity(entity).despawn();
+        }
+        state.visible = false;
+    }
+}
+
+/// Use actual layout extents and UI scale, rather than an assumed tooltip size.
+pub(crate) fn position_tooltip(
+    mut roots: Query<(&ComputedNode, &mut Node, &mut Visibility), With<TooltipUI>>,
+    windows: Query<&Window>,
+    scale: Res<UiScale>,
+    style: Res<TooltipStyle>,
+) {
+    let Ok(window) = windows.single() else {
+        return;
+    };
+    let Some(cursor) = window.cursor_position() else {
+        return;
+    };
+    let viewport = Vec2::new(window.width(), window.height()) / scale.0;
+    let cursor = cursor / scale.0;
+    for (computed, mut node, mut visibility) in &mut roots {
+        let size = computed.size() * computed.inverse_scale_factor();
+        node.max_width = Val::Px(style.max_width.min((viewport.x - 16.0).max(1.0)));
+        node.max_height = Val::Px((viewport.y - 16.0).max(1.0));
+        if size.x <= 0.0 || size.y <= 0.0 {
+            *visibility = Visibility::Hidden;
+            continue;
+        }
+        // Preserve position once visible so the user can move onto the tip.
+        let (x, y) = if *visibility == Visibility::Hidden {
+            (
+                if cursor.x + 12.0 + size.x <= viewport.x - 8.0 {
+                    cursor.x + 12.0
+                } else {
+                    cursor.x - size.x - 12.0
+                },
+                if cursor.y + 12.0 + size.y <= viewport.y - 8.0 {
+                    cursor.y + 12.0
+                } else {
+                    viewport.y - size.y - 8.0
+                },
+            )
+        } else {
+            (
+                match node.left {
+                    Val::Px(x) => x,
+                    _ => 8.0,
+                },
+                match node.top {
+                    Val::Px(y) => y,
+                    _ => 8.0,
+                },
+            )
+        };
+        node.left = Val::Px(x.clamp(8.0, (viewport.x - size.x - 8.0).max(8.0)));
+        node.top = Val::Px(y.clamp(8.0, (viewport.y - size.y - 8.0).max(8.0)));
+        *visibility = Visibility::Visible;
     }
 }

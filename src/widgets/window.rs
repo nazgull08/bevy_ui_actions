@@ -13,7 +13,7 @@
 //!   windows; routing shortcuts/ESC to the focused window is not implemented.
 //! - **No resize handles.**
 
-use crate::core::{is_in_scope, TextRole, UiInputScope, UiTextExt, ZLayer};
+use crate::core::{TextRole, UiInputScope, UiTextExt, ZLayer, is_in_scope};
 use bevy::prelude::*;
 use bevy::ui::{FocusPolicy, UiGlobalTransform};
 
@@ -304,30 +304,33 @@ pub(crate) fn window_move_system(
     let cursor = windows.single().ok().and_then(|w| w.cursor_position());
 
     // Begin a move: press over a movable window's title bar.
-    if drag.active.is_none() && mouse.just_pressed(MouseButton::Left)
-        && let Some(cursor) = cursor {
-            for (bar, interaction) in &bars {
-                if !matches!(interaction, Interaction::Pressed | Interaction::Hovered) {
-                    continue;
-                }
-                if !movable.contains(bar.window) {
-                    continue;
-                }
-                // Respect a modal/overlay input trap (e.g. a modal in front).
-                if let Some(ref scope) = scope
-                    && !is_in_scope(bar.window, scope, &scope_parents) {
-                        continue;
-                    }
-                if let Ok((node, _)) = nodes.get(bar.window) {
-                    let top_left = Vec2::new(val_px(node.left), val_px(node.top));
-                    drag.active = Some(WindowDrag {
-                        window: bar.window,
-                        grab_offset: cursor - top_left,
-                    });
-                }
-                break;
+    if drag.active.is_none()
+        && mouse.just_pressed(MouseButton::Left)
+        && let Some(cursor) = cursor
+    {
+        for (bar, interaction) in &bars {
+            if !matches!(interaction, Interaction::Pressed | Interaction::Hovered) {
+                continue;
             }
+            if !movable.contains(bar.window) {
+                continue;
+            }
+            // Respect a modal/overlay input trap (e.g. a modal in front).
+            if let Some(ref scope) = scope
+                && !is_in_scope(bar.window, scope, &scope_parents)
+            {
+                continue;
+            }
+            if let Ok((node, _)) = nodes.get(bar.window) {
+                let top_left = Vec2::new(val_px(node.left), val_px(node.top));
+                drag.active = Some(WindowDrag {
+                    window: bar.window,
+                    grab_offset: cursor - top_left,
+                });
+            }
+            break;
         }
+    }
 
     // Continue or end the move.
     let Some(active) = &drag.active else {
@@ -434,21 +437,24 @@ pub(crate) fn window_focus_system(
     let mut hit: Option<Entity> = None;
     for &win in manager.focus_stack.iter().rev() {
         if let Some(ref scope) = scope
-            && !is_in_scope(win, scope, &scope_parents) {
-                continue;
-            }
+            && !is_in_scope(win, scope, &scope_parents)
+        {
+            continue;
+        }
         if let Ok((transform, computed)) = win_nodes.get(win)
-            && cursor_in_window(cursor, transform, computed) {
-                hit = Some(win);
-                break;
-            }
+            && cursor_in_window(cursor, transform, computed)
+        {
+            hit = Some(win);
+            break;
+        }
     }
 
     if let Some(win) = hit
-        && manager.focus_stack.last() != Some(&win) {
-            manager.focus_stack.retain(|&e| e != win);
-            manager.focus_stack.push(win);
-        }
+        && manager.focus_stack.last() != Some(&win)
+    {
+        manager.focus_stack.retain(|&e| e != win);
+        manager.focus_stack.push(win);
+    }
 }
 
 /// Write `GlobalZIndex` from stack order and maintain the [`WindowFocused`] marker.
@@ -500,9 +506,10 @@ pub(crate) fn window_close_system(
             continue;
         }
         if let Some(ref scope) = scope
-            && !is_in_scope(button.window, scope, &scope_parents) {
-                continue;
-            }
+            && !is_in_scope(button.window, scope, &scope_parents)
+        {
+            continue;
+        }
         commands.entity(button.window).despawn();
     }
 }

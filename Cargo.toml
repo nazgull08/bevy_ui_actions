@@ -1,6 +1,6 @@
 [package]
 name = "bevy_ui_actions"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2024"
 license = "MIT"
 description = "Action-driven UI toolkit for Bevy — clicks, drag-drop, tooltips, tabs, scroll views, modals, dialogue system, 3D viewports"
@@ -114,3 +114,11 @@ required-features = ["viewport3d"]
 name = "character_sheet"
 path = "examples/character_sheet/main.rs"
 required-features = ["viewport3d"]
+
+[[example]]
+name = "nested_tabs"
+path = "examples/nested_tabs.rs"
+
+[[example]]
+name = "scroll_bounds"
+path = "examples/scroll_bounds.rs"

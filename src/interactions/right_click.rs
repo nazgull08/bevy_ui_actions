@@ -1,4 +1,4 @@
-use crate::core::{is_in_scope, UiAction, UiInputScope};
+use crate::core::{UiAction, UiInputScope, is_in_scope};
 use crate::widgets::Disabled;
 use bevy::prelude::*;
 use std::sync::Arc;
@@ -36,9 +36,10 @@ pub(crate) fn handle_right_clicks(
         for (entity, interaction, on_right_click) in &query {
             if *interaction == Interaction::Hovered || *interaction == Interaction::Pressed {
                 if let Some(ref scope) = scope
-                    && !is_in_scope(entity, scope, &parents) {
-                        continue;
-                    }
+                    && !is_in_scope(entity, scope, &parents)
+                {
+                    continue;
+                }
                 on_right_click.execute(&mut commands);
             }
         }

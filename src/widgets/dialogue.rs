@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use crate::core::{TextRole, UiAction, UiInputScope, UiTextExt, ZLayer};
 use crate::widgets::hypertext::{
-    append_topic_block, HyperLinkClicked, HyperTextConfig, SpawnHyperTextExt, TopicContainer,
+    HyperLinkClicked, HyperTextConfig, SpawnHyperTextExt, TopicContainer, append_topic_block,
 };
 use crate::widgets::panel::{PanelConfig, SpawnPanelExt};
 use crate::widgets::scroll_view::{ScrollView, StickToBottom};
@@ -709,9 +709,10 @@ pub(crate) fn update_topic_button_colors(
         };
         for child in children.iter() {
             if let Ok(mut tc) = text_colors.get_mut(child)
-                && tc.0 != color {
-                    tc.0 = color;
-                }
+                && tc.0 != color
+            {
+                tc.0 = color;
+            }
         }
     }
 }
@@ -934,9 +935,10 @@ pub(crate) fn update_choice_button_visuals(
         }
         for child in children.iter() {
             if let Ok(mut tc) = text_colors.get_mut(child)
-                && tc.0 != text {
-                    tc.0 = text;
-                }
+                && tc.0 != text
+            {
+                tc.0 = text;
+            }
         }
     }
 }
@@ -1418,7 +1420,9 @@ fn spawn_dialogue(
                                     padding: UiRect::axes(Val::Px(16.0), Val::Px(7.0)),
                                     border: UiRect::all(Val::Px(1.0)),
                                     margin: UiRect::top(Val::Px(10.0)),
-                                    border_radius: BorderRadius::all(Val::Px(config.choice_border_radius)),
+                                    border_radius: BorderRadius::all(Val::Px(
+                                        config.choice_border_radius,
+                                    )),
                                     ..default()
                                 },
                                 BackgroundColor(config.choice_bg),

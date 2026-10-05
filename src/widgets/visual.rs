@@ -32,7 +32,7 @@
 //! }
 //! ```
 
-use crate::core::{is_in_scope, ButtonStyle, UiInputScope};
+use crate::core::{ButtonStyle, UiInputScope, is_in_scope};
 use bevy::prelude::*;
 
 // ============================================================
@@ -280,21 +280,19 @@ impl BorderStyle {
         }
 
         // Selected takes priority over active for border
-        if is_selected
-            && let Some(selected_color) = self.selected {
-                return match interaction {
-                    Interaction::Hovered => Self::lighten(selected_color, 0.1),
-                    _ => selected_color,
-                };
-            }
+        if is_selected && let Some(selected_color) = self.selected {
+            return match interaction {
+                Interaction::Hovered => Self::lighten(selected_color, 0.1),
+                _ => selected_color,
+            };
+        }
 
-        if is_active
-            && let Some(active_color) = self.active {
-                return match interaction {
-                    Interaction::Hovered => Self::lighten(active_color, 0.08),
-                    _ => active_color,
-                };
-            }
+        if is_active && let Some(active_color) = self.active {
+            return match interaction {
+                Interaction::Hovered => Self::lighten(active_color, 0.08),
+                _ => active_color,
+            };
+        }
 
         match interaction {
             Interaction::Pressed => self.pressed,

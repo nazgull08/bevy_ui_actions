@@ -189,7 +189,9 @@ cargo run --example rich_tooltip     # Stat comparison tooltips
 cargo run --example right_click      # Left + right click actions
 cargo run --example selection        # Grid selection with BorderStyle
 cargo run --example tabs             # Tab switching
+cargo run --example nested_tabs      # Independent nested groups and deep hierarchies
 cargo run --example scroll_view      # Scrollable content
+cargo run --example scroll_bounds    # Layout bounds, wrapping, scrollbars and UI scale
 cargo run --example slider           # RGB mixer + tuning row (slider + fine buttons)
 cargo run --example modal            # Modal dialogs
 cargo run --example window_manager   # Floating windows: drag, focus, close

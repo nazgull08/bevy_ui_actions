@@ -1,5 +1,5 @@
-use bevy::prelude::*;
 use bevy::camera::visibility::RenderLayers;
+use bevy::prelude::*;
 
 use crate::data::{EquipSlot, EquipmentState, ITEMS};
 

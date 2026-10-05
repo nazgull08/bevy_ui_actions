@@ -264,8 +264,6 @@ fn spawn_modal(commands: &mut Commands, style: &ModalStyle, request: ModalReques
     let dismissable = request.dismissable;
     let content = request.content;
 
-    
-
     commands
         .spawn((
             Modal {

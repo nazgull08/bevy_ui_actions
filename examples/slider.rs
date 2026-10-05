@@ -95,68 +95,66 @@ impl UiAction for ResetAction {
 fn setup(mut commands: Commands) {
     commands.spawn(Camera2d);
 
-    commands
-        .spawn(Node::centered(24.0))
-        .with_children(|root| {
-            root.ui_text(TextRole::Heading, "Slider — RGB mixer");
+    commands.spawn(Node::centered(24.0)).with_children(|root| {
+        root.ui_text(TextRole::Heading, "Slider — RGB mixer");
 
-            // Color swatch driven by the three channel sliders.
-            root.spawn((
-                Node {
+        // Color swatch driven by the three channel sliders.
+        root.spawn((
+            Node {
+                width: Val::Px(220.0),
+                height: Val::Px(60.0),
+                border: UiRect::all(Val::Px(1.0)),
+                ..default()
+            },
+            BackgroundColor(Color::srgb_u8(90, 140, 200)),
+            BorderColor::all(Color::srgb(0.35, 0.35, 0.4)),
+            Swatch,
+        ));
+
+        // R / G / B rows: label + slider (0..255, snap 1) + value.
+        let channels = [("R", 90.0), ("G", 140.0), ("B", 200.0)];
+        for (i, (name, initial)) in channels.into_iter().enumerate() {
+            root.spawn(Node::row(10.0)).with_children(|row| {
+                row.ui_text(TextRole::Body, name);
+                let slider = row.spawn_slider(SliderConfig {
                     width: Val::Px(220.0),
-                    height: Val::Px(60.0),
-                    border: UiRect::all(Val::Px(1.0)),
+                    min: 0.0,
+                    max: 255.0,
+                    initial,
+                    step: 1.0,
+                    ..default()
+                });
+                row.commands().entity(slider).insert(Drives::Channel(i));
+                // Fixed width so 1→3 digit swings don't reflow the row.
+                row.ui_text(TextRole::Body, format!("{initial:.0}"))
+                    .insert((
+                        Node {
+                            width: Val::Px(36.0),
+                            ..default()
+                        },
+                        ChannelLabel(i),
+                    ));
+            });
+        }
+
+        // Tuning-panel row: slider for feel, −/+ buttons for precision.
+        root.ui_text(TextRole::Button, "Offset (slider + fine buttons)");
+        root.spawn(Node::row(10.0)).with_children(|row| {
+            row.spawn_button(NudgeOffset(-0.05), "-");
+            let slider = row.spawn_slider(SliderConfig::symmetric(2.0, 0.0, 0.0));
+            row.commands().entity(slider).insert(Drives::Offset);
+            row.spawn_button(NudgeOffset(0.05), "+");
+            row.ui_text(TextRole::Body, "+0.00").insert((
+                Node {
+                    width: Val::Px(52.0),
                     ..default()
                 },
-                BackgroundColor(Color::srgb_u8(90, 140, 200)),
-                BorderColor::all(Color::srgb(0.35, 0.35, 0.4)),
-                Swatch,
+                OffsetLabel,
             ));
-
-            // R / G / B rows: label + slider (0..255, snap 1) + value.
-            let channels = [("R", 90.0), ("G", 140.0), ("B", 200.0)];
-            for (i, (name, initial)) in channels.into_iter().enumerate() {
-                root.spawn(Node::row(10.0)).with_children(|row| {
-                    row.ui_text(TextRole::Body, name);
-                    let slider = row.spawn_slider(SliderConfig {
-                        width: Val::Px(220.0),
-                        min: 0.0,
-                        max: 255.0,
-                        initial,
-                        step: 1.0,
-                        ..default()
-                    });
-                    row.commands().entity(slider).insert(Drives::Channel(i));
-                    // Fixed width so 1→3 digit swings don't reflow the row.
-                    row.ui_text(TextRole::Body, format!("{initial:.0}"))
-                        .insert((
-                            Node {
-                                width: Val::Px(36.0),
-                                ..default()
-                            },
-                            ChannelLabel(i),
-                        ));
-                });
-            }
-
-            // Tuning-panel row: slider for feel, −/+ buttons for precision.
-            root.ui_text(TextRole::Button, "Offset (slider + fine buttons)");
-            root.spawn(Node::row(10.0)).with_children(|row| {
-                row.spawn_button(NudgeOffset(-0.05), "-");
-                let slider = row.spawn_slider(SliderConfig::symmetric(2.0, 0.0, 0.0));
-                row.commands().entity(slider).insert(Drives::Offset);
-                row.spawn_button(NudgeOffset(0.05), "+");
-                row.ui_text(TextRole::Body, "+0.00").insert((
-                    Node {
-                        width: Val::Px(52.0),
-                        ..default()
-                    },
-                    OffsetLabel,
-                ));
-            });
-
-            root.spawn_button(ResetAction, "Reset");
         });
+
+        root.spawn_button(ResetAction, "Reset");
+    });
 }
 
 /// SliderChanged → live state. One handler for all sliders; the Drives

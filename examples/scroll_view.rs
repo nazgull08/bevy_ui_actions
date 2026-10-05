@@ -252,10 +252,11 @@ fn handle_list_selection(
 ) {
     for event in events.read() {
         if let Ok(mut text) = text_query.single_mut()
-            && event.index < ITEMS.len() {
-                let (name, desc) = ITEMS[event.index];
-                **text = format!("Selected: {} — {}", name, desc);
-            }
+            && event.index < ITEMS.len()
+        {
+            let (name, desc) = ITEMS[event.index];
+            **text = format!("Selected: {} — {}", name, desc);
+        }
     }
 }
 

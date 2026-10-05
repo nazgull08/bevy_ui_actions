@@ -24,8 +24,8 @@ use data::*;
 use equipment_tab::{highlight_compatible_slots, spawn_equipment_tab, sync_equipment};
 use lore_tab::{setup_lore_registry, spawn_lore_tab};
 use mannequin::{
-    propagate_render_layers, resolve_mannequin, spawn_mannequin, sync_mannequin_equipment,
-    MannequinParts,
+    MannequinParts, propagate_render_layers, resolve_mannequin, spawn_mannequin,
+    sync_mannequin_equipment,
 };
 use stats_tab::spawn_stats_tab;
 use ui_helpers::*;
@@ -279,21 +279,22 @@ fn sync_attributes(
         let new_val = stats_tab::derived_value(stat.0, &stats);
         let old_val = old_derived.iter().find(|(k, _)| *k == stat.0);
         if let Some((_, old)) = old_val
-            && *old != new_val {
-                // Parse numeric part for comparison
-                let old_num: f32 = old.trim_end_matches('%').parse().unwrap_or(0.0);
-                let new_num: f32 = new_val.trim_end_matches('%').parse().unwrap_or(0.0);
-                let flash_color = if new_num > old_num {
-                    COLOR_IMPROVED
-                } else {
-                    COLOR_WORSENED
-                };
-                color.0 = flash_color;
-                commands.entity(entity).insert(ChangeFlash {
-                    timer: FLASH_DURATION,
-                    color: flash_color,
-                });
-            }
+            && *old != new_val
+        {
+            // Parse numeric part for comparison
+            let old_num: f32 = old.trim_end_matches('%').parse().unwrap_or(0.0);
+            let new_num: f32 = new_val.trim_end_matches('%').parse().unwrap_or(0.0);
+            let flash_color = if new_num > old_num {
+                COLOR_IMPROVED
+            } else {
+                COLOR_WORSENED
+            };
+            color.0 = flash_color;
+            commands.entity(entity).insert(ChangeFlash {
+                timer: FLASH_DURATION,
+                color: flash_color,
+            });
+        }
         **text = new_val;
     }
 

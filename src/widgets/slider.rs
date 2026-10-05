@@ -10,7 +10,7 @@
 //! where a value needs continuous mouse adjustment. Pair with buttons
 //! for precise stepping — see `examples/slider.rs`.
 
-use crate::core::{is_in_scope, UiInputScope};
+use crate::core::{UiInputScope, is_in_scope};
 use bevy::prelude::*;
 use bevy::ui::UiGlobalTransform;
 
@@ -247,7 +247,13 @@ pub(crate) fn slider_drag(
     mouse: Res<ButtonInput<MouseButton>>,
     windows: Query<&Window>,
     mut drag_state: ResMut<SliderDragState>,
-    mut sliders: Query<(Entity, &mut Slider, &Interaction, &UiGlobalTransform, &ComputedNode)>,
+    mut sliders: Query<(
+        Entity,
+        &mut Slider,
+        &Interaction,
+        &UiGlobalTransform,
+        &ComputedNode,
+    )>,
     thumbs: Query<(&Interaction, &SliderThumb)>,
     mut events: MessageWriter<SliderChanged>,
     scope: Option<Res<UiInputScope>>,
@@ -274,9 +280,10 @@ pub(crate) fn slider_drag(
                 continue;
             }
             if let Some(ref scope) = scope
-                && !is_in_scope(entity, scope, &parents) {
-                    continue;
-                }
+                && !is_in_scope(entity, scope, &parents)
+            {
+                continue;
+            }
             drag_state.dragging = Some(entity);
             break;
         }

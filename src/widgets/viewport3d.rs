@@ -4,8 +4,8 @@ use bevy::prelude::*;
 // PORT-0.17: render types split into dedicated crates (bevy_camera/bevy_asset).
 use bevy::asset::RenderAssetUsages;
 use bevy::camera::visibility::RenderLayers;
-use bevy::ui::UiGlobalTransform;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat, TextureUsages};
+use bevy::ui::UiGlobalTransform;
 
 /// Configuration for spawning a 3D viewport widget.
 #[derive(Clone, Debug)]
