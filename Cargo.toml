@@ -42,6 +42,10 @@ encase = "=0.12.1"
 bevy = { version = "0.19.1", features = ["default"] }
 
 [[example]]
+name = "polyline"
+path = "examples/polyline.rs"
+
+[[example]]
 name = "counter"
 path = "examples/counter.rs"
 

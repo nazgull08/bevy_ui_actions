@@ -3,6 +3,7 @@ mod hypertext;
 mod list_view;
 mod modal;
 mod panel;
+mod polyline;
 mod progress_bar;
 mod scroll_view;
 mod slider;
@@ -35,6 +36,8 @@ pub use modal::{
     ModalStyle, spawn_modal_button,
 };
 pub use panel::{PanelConfig, SpawnPanelExt};
+pub(crate) use polyline::register_polylines;
+pub use polyline::{MAX_UI_POLYLINE_POINTS, UiPolyline, UiPolylineSet, UiStrokeStyle};
 pub use progress_bar::{ProgressBar, ProgressBarConfig, ProgressBarFill, SpawnProgressBarExt};
 pub use scroll_view::{
     ScrollDirection, ScrollView, ScrollViewConfig, ScrollbarDragState, ScrollbarThumb,

@@ -35,6 +35,7 @@ pub struct UiActionsPlugin;
 
 impl Plugin for UiActionsPlugin {
     fn build(&self, app: &mut App) {
+        crate::widgets::register_polylines(app);
         app.init_resource::<UiTheme>()
             .init_resource::<ButtonStyle>()
             .init_resource::<DragState>()

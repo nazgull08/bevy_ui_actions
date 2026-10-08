@@ -1,3 +1,4 @@
+#![recursion_limit = "256"]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 //! # bevy_ui_actions
 //!
@@ -69,6 +70,7 @@ pub mod prelude;
 
 // Re-export plugin
 pub use plugin::UiActionsPlugin;
+pub use widgets::{MAX_UI_POLYLINE_POINTS, UiPolyline, UiPolylineSet, UiStrokeStyle};
 
 // Re-export core
 pub use core::{

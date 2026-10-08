@@ -30,6 +30,7 @@ pub use crate::widgets::{
 };
 
 pub use crate::UiActionsPlugin;
+pub use crate::widgets::{MAX_UI_POLYLINE_POINTS, UiPolyline, UiPolylineSet, UiStrokeStyle};
 
 #[cfg(feature = "viewport3d")]
 pub use crate::widgets::{

@@ -32,6 +32,7 @@ Instead of matching `Interaction` changes in every system, define **action struc
 - **Dialogue** — Morrowind-style dialogue box: `TopicRegistry` + topic panel, active-topic highlight, answer choices (mouse **and** number keys), in-place `SetDialogueChoices` / `AppendDialogueText` events for topic-node flows, and a topic lock while a decision is pending
 - **TopicContainer** — generic topic expansion outside dialogue (works with HyperText links)
 - **Viewport3d** — 3D render-to-texture preview inside UI *(feature `viewport3d`)*
+- **UI polylines** — antialiased decorative strokes, rounded bends and optional endpoint dots; logical-pixel coordinates, parent clipping and click-through
 
 ## Quick start
 
@@ -177,6 +178,35 @@ commands.entity(handle.pivot).with_children(|pivot| {
 });
 ```
 
+## Decorative UI lines
+
+Spawn `UiPolyline` below a UI parent with a defined size. Coordinates and
+style dimensions use logical pixels relative to the parent's top-left origin.
+The widget owns its absolute `Node` geometry and generated material; set
+`ZIndex` and parent `overflow` to control layering and clipping.
+
+```rust
+parent.spawn(UiPolyline::new(vec![
+    Vec2::new(20.0, 40.0),
+    Vec2::new(45.0, 40.0),
+    Vec2::new(130.0, 100.0),
+]).with_style(UiStrokeStyle {
+    color: Color::srgba(0.7, 0.75, 0.7, 0.5),
+    width: 1.0,
+    corner_radius: 5.0,
+    end_dot_radius: 2.0,
+}));
+```
+
+The embedded shader requires no files in the application's assets directory.
+Lines ignore picking, allowing buttons and drag targets underneath to work.
+Update the component in `Update`, or before `UiPolylineSet::Prepare` in
+`PostUpdate`, to apply changes before layout. This primitive does not project 3D points or infer
+hover/selection: the consumer supplies coordinates and color.
+Rounded paths are limited to `MAX_UI_POLYLINE_POINTS` (64 tessellated points).
+Invalid or oversized paths are hidden rather than truncated. Despawn the
+entity to remove a line.
+
 ## Examples
 
 ```sh
@@ -185,6 +215,7 @@ cargo run --example menu             # State management + tooltips
 cargo run --example drag_drop        # Drag & drop with ghost
 cargo run --example inventory_demo   # Item movement between slots
 cargo run --example progress_bar     # HP/MP/SP bars
+cargo run --example polyline         # Rounded strokes, clipping, click-through and UI scale
 cargo run --example rich_tooltip     # Stat comparison tooltips
 cargo run --example right_click      # Left + right click actions
 cargo run --example selection        # Grid selection with BorderStyle

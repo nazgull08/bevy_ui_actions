@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Add `UiPolyline`, `UiStrokeStyle` and `UiPolylineSet::Prepare`: embedded
+  antialiased UI stroke material, rounded bends, optional endpoint dots,
+  logical-pixel sizing, parent clipping and nonblocking picking. Include
+  a `polyline` example for dynamic endpoints, color changes and UI scale.
+
 ## 0.3.1
 
 - **Fix:** hypertext link hit-testing on HiDPI. Bevy 0.19 lays glyphs out in
